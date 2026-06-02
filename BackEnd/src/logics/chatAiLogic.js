@@ -13,6 +13,7 @@ const openai = new OpenAI({
 const MAX_MESSAGE_CHARS = 6000;
 const MAX_CONTEXT_FILE_CHARS = 20000;
 const MAX_CONTEXT_FILES = 8;
+const MAX_COMPILE_LOG_CHARS = 16000;
 
 const clipText = (value = '', max = MAX_MESSAGE_CHARS) => {
     const text = String(value || '');
@@ -40,6 +41,13 @@ const formatFileContext = (file, label) => {
     return `### ${label}: ${filePath}\n\n\`\`\`latex\n${content}\n\`\`\``;
 };
 
+const formatCompileLogContext = (compileLog) => {
+    const text = clipText(compileLog || "", MAX_COMPILE_LOG_CHARS).trim();
+    if (!text) return "";
+
+    return "### 최근 컴파일 로그\n\n```text\n" + text + "\n```";
+};
+
 const formatLatexContext = (latexContext) => {
     if (typeof latexContext === 'string') {
         return formatFileContext({ path: '현재 파일', content: latexContext }, '현재 활성 파일');
@@ -63,11 +71,14 @@ const formatLatexContext = (latexContext) => {
         .filter(Boolean)
         .join('\n\n');
 
+    const compileLogText = formatCompileLogContext(latexContext.compileLog);
+
     return [
         `프로젝트: ${projectTitle}`,
         latexContext.referencePolicy ? `컨텍스트 정책: ${latexContext.referencePolicy}` : '',
         activeFile,
-        relatedText
+        relatedText,
+        compileLogText
     ].filter(Boolean).join('\n\n');
 };
 
@@ -107,6 +118,7 @@ const BASE_SYSTEM_PROMPT = [
 const LATEX_SYSTEM_PROMPT = [
     'LaTeX 문법 검사/컴파일 오류/코드 생성 지침:',
     '- 현재 활성 파일과 참조 파일을 실제로 검사합니다.',
+    '- 최근 컴파일 로그가 제공되면 로그의 파일명/줄번호/에러 메시지를 우선 근거로 진단합니다.',
     '- 먼저 치명적인 컴파일 문제, 누락된 패키지, 문서 구조 문제를 찾습니다.',
     '- 한글 텍스트가 있는데 한글 처리 설정이 없으면 반드시 지적합니다.',
     '- pdfLaTeX 기준은 \\usepackage{kotex}를 확인합니다.',

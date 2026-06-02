@@ -423,9 +423,26 @@ const entryController = {
                 }
             }
         }
-            console.error('[UPLOAD ERROR]', error.message);
+            console.error('[UPLOAD ERROR]', error.message, {
+                fileName: error.fileName,
+                extension: error.extension,
+                mimeType: error.mimeType
+            });
 
-            res.status(500).json({ status: "error", message: error.message });
+            const statusCode = error.statusCode || 500;
+            const errorLog = error.fileName
+                ? '지원하지 않는 업로드 파일입니다: ' + error.fileName + ' (확장자: ' + error.extension + ', MIME: ' + error.mimeType + ')'
+                : error.message;
+
+            res.status(statusCode).json({
+                status: "error",
+                statusCode,
+                message: error.message,
+                errorLog,
+                fileName: error.fileName,
+                extension: error.extension,
+                mimeType: error.mimeType
+            });
         } finally {
             if (connection) connection.release();
         }

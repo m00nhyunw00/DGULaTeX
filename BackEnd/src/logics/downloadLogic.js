@@ -78,7 +78,7 @@ module.exports = {
             const archivePath = calculateFullPath(entry); 
             
             const ext = path.extname(entry.title).toLowerCase();
-            const isTextExtension = ['.tex', '.bib', '.txt', '.toc', '.sty'].includes(ext);
+            const isTextExtension = ['.tex', '.bib', '.txt', '.toc', '.sty', '.cls', '.md'].includes(ext);
 
             // Case A: 가상 텍스트 파일 (.tex, .bib 등 DB 기반)
             if ((entry.current_content !== undefined && entry.current_content !== null) || isTextExtension) {

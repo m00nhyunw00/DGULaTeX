@@ -53,8 +53,8 @@ function HistoryUI({
             return;
         }
 
-        if (activeFile.isImage) {
-            alert('이미지 파일은 현재 파일 롤백 대상에서 제외됩니다.');
+        if (activeFile.isCodeViewerUnsupported) {
+            alert('이미지/PDF 파일은 현재 파일 롤백 대상에서 제외됩니다.');
             return;
         }
 

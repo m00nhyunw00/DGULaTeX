@@ -559,11 +559,12 @@ function EditorUI(props) {
                 </div> */}
 
                 <div className="editor-resizable-panel">
-                    {activeFileKind === 'image' ? (
+                    {(activeFileKind === 'image' || activeFileKind === 'pdf') ? (
                         <ImageViewerUI
                             activeFileId={activeFileId}
                             fileName={activeFileMeta?.name}
                             imageUrl={activeImageUrl}
+                            fileType={activeFileKind}
                             isFileContentLoaded={isFileContentLoaded}
                         />
                     ) : (

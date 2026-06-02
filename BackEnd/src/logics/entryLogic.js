@@ -10,6 +10,12 @@ const fs = require('fs/promises');
 const path = require('path');
 const crypto = require('crypto');
 
+const TEXT_FILE_EXTENSIONS = new Set(['.tex', '.bib', '.txt', '.toc', '.sty', '.cls', '.md']);
+const ALLOWED_UPLOAD_EXTENSIONS = new Set([
+    ...TEXT_FILE_EXTENSIONS,
+    '.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.pdf'
+]);
+
 const entryLogic = {
     /** UUID 생성 및 Buffer 변환 */
     generateBinaryId: () => Buffer.from(uuidv4().replace(/-/g, ''), 'hex'),
@@ -85,7 +91,8 @@ const entryLogic = {
             'image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp', 'image/svg+xml',
             'application/pdf'
         ]);
-        return allowedMimeTypes.has(file.mimetype) || file.originalname.endsWith('.tex');
+        const ext = path.extname(file.originalname || '').toLowerCase();
+        return allowedMimeTypes.has(file.mimetype) || ALLOWED_UPLOAD_EXTENSIONS.has(ext);
     },
 
     /**  이미지 업로드 - 에러 발생 시 임시 파일 삭제  */
@@ -101,6 +108,9 @@ const entryLogic = {
             await entryLogic.removeTempFile(uploadedFile.path);
             const err = new Error('UNSUPPORTED_FILE_TYPE');
             err.statusCode = 400;
+            err.fileName = safeFileName || uploadedFile.originalname || '';
+            err.extension = path.extname(err.fileName || uploadedFile.originalname || '').toLowerCase() || '(none)';
+            err.mimeType = uploadedFile.mimetype || 'unknown';
             throw err;
         }
 
@@ -111,7 +121,7 @@ const entryLogic = {
         const ext = path.extname(safeFileName).toLowerCase();
         const isTextFile =
             uploadedFile.mimetype === 'text/plain' ||
-            ['.tex', '.bib', '.txt', '.sty', '.cls', '.md'].includes(ext);
+            TEXT_FILE_EXTENSIONS.has(ext);
 
         if (isTextFile) {
             let textContent = '';
@@ -228,7 +238,7 @@ const entryLogic = {
     
         // 확장자 체크 및 assetUrl 실시간 조합
         const ext = entry.title ? path.extname(entry.title).toLowerCase() : '';
-        const isTextFile = ['.tex', '.bib', '.txt', '.sty'].includes(ext);
+        const isTextFile = TEXT_FILE_EXTENSIONS.has(ext);
     
         let assetUrl = null;
         if (!isTextFile && !entry.is_folder) {
@@ -373,7 +383,7 @@ const entryLogic = {
         
         // 확장자 검사 로직(.tex 등의 확장자면 텍스트 데이터로 인식)
         const ext = path.extname(safeFileName).toLowerCase();
-        const isTextExtension = ['.tex', '.bib', '.txt', '.toc', '.sty'].includes(ext);
+        const isTextExtension = TEXT_FILE_EXTENSIONS.has(ext);
         
         //  DB 가상 파일 (.tex, .bib 등 텍스트 편집 데이터)
         if ((entry.current_content !== undefined && entry.current_content !== null) || isTextExtension) {

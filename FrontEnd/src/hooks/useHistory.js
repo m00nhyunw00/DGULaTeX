@@ -144,7 +144,7 @@ export const useHistory = (projectId, currentUser) => {
             targetEntry?.entryName ||
             '';
 
-        if (isImageFileName(targetFileName)) {
+        if (isCodeViewerUnsupportedFileName(targetFileName)) {
             setFileError('');
             setIsFileLoading(false);
 
@@ -154,7 +154,7 @@ export const useHistory = (projectId, currentUser) => {
                 content: '',
                 label: targetEntry?.label || null,
                 changedLines: [],
-                isImage: true
+                isCodeViewerUnsupported: true
             });
 
             return;
@@ -303,14 +303,15 @@ export const useHistory = (projectId, currentUser) => {
     * --------------------------------------------------------- */
 
     const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'];
+    const CODE_VIEWER_UNSUPPORTED_EXTENSIONS = [...IMAGE_EXTENSIONS, 'pdf'];
 
-    const isImageFileName = (fileName = '') => {
+    const isCodeViewerUnsupportedFileName = (fileName = '') => {
         const extension = String(fileName)
             .toLowerCase()
             .split('.')
             .pop();
 
-        return IMAGE_EXTENSIONS.includes(extension);
+        return CODE_VIEWER_UNSUPPORTED_EXTENSIONS.includes(extension);
     };
 
     /* ---------------------------------------------------------
@@ -347,10 +348,10 @@ export const useHistory = (projectId, currentUser) => {
             };
         }
 
-        if (activeFile?.isImage) {
+        if (activeFile?.isCodeViewerUnsupported) {
             return {
                 success: false,
-                message: '이미지 파일은 현재 파일 롤백 대상에서 제외됩니다.'
+                message: '이미지/PDF 파일은 현재 파일 롤백 대상에서 제외됩니다.'
             };
         }
 

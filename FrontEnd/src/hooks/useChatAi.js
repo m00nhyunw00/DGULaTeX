@@ -12,6 +12,7 @@ const MAX_RECENT_MESSAGES = 10;
 const MAX_SUMMARY_CHARS = 3200;
 const MAX_CONTEXT_FILES = 6;
 const MAX_FILE_CHARS = 18000;
+const MAX_COMPILE_LOG_CHARS = 12000;
 
 const emptyChatState = {
     isOpen: false,
@@ -150,6 +151,7 @@ export const useChat = ({
     activeFileMeta,
     currentLaTeX,
     getCurrentLaTeX,
+    compileLog,
     chatState,
     setChatState
 }) => {
@@ -235,9 +237,10 @@ export const useChat = ({
             },
             activeFile: currentFile,
             relatedFiles,
-            referencePolicy: '현재 활성 파일과 해당 파일에서 직접 input/include/subfile로 참조한 파일만 포함했습니다.'
+            compileLog: clipText(compileLog || "", MAX_COMPILE_LOG_CHARS),
+            referencePolicy: '현재 활성 파일과 해당 파일에서 직접 input/include/subfile로 참조한 파일, 그리고 최근 컴파일 로그를 포함했습니다.'
         };
-    }, [activeFile, currentLaTeX, flatEntries, getCurrentLaTeX, project, projectId]);
+    }, [activeFile, compileLog, currentLaTeX, flatEntries, getCurrentLaTeX, project, projectId]);
 
     const handleSend = useCallback(async (e) => {
         if (e?.preventDefault) e.preventDefault();

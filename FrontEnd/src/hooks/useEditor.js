@@ -378,6 +378,7 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
     }, [handleAutoCompile]);
 
     const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'];
+    const PDF_EXTENSIONS = ['pdf'];
 
     const getFileExtension = (fileName = '') => {
         const parts = String(fileName).toLowerCase().split('.');
@@ -386,6 +387,10 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
 
     const isImageFileName = (fileName = '') => {
         return IMAGE_EXTENSIONS.includes(getFileExtension(fileName));
+    };
+
+    const isPdfFileName = (fileName = '') => {
+        return PDF_EXTENSIONS.includes(getFileExtension(fileName));
     };
 
     const findEntryById = useCallback((nodes, targetId) => {
@@ -1069,11 +1074,12 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
             '';
 
         const isImage = isImageFileName(targetFileName);
+        const isPdf = isPdfFileName(targetFileName);
 
-        if (isImage) {
+        if (isImage || isPdf) {
             cleanupYjs();
 
-            setActiveFileKind('image');
+            setActiveFileKind(isPdf ? 'pdf' : 'image');
             setActiveFileMeta({
                 id: cleanId,
                 name: targetFileName

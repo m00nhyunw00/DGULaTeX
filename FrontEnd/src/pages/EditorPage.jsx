@@ -35,6 +35,7 @@ function EditorPage({ user, project, handleLogout, backToDashboard, goToHistory,
         activeFileMeta: editorLogic.activeFileMeta,
         currentLaTeX: editorLogic.fileContent,
         getCurrentLaTeX: editorLogic.getSnapshotText,
+        compileLog: editorLogic.compileLog,
         chatState,
         setChatState
     });

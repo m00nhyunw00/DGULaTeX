@@ -269,9 +269,9 @@ function HistoryEditorUI({
                     <div className="h-100 d-flex align-items-center justify-content-center text-danger">
                         {error}
                     </div>
-                ) : activeFile?.isImage ? (
+                ) : activeFile?.isCodeViewerUnsupported ? (
                     <div className="h-100 d-flex align-items-center justify-content-center text-muted">
-                        이미지 파일은 히스토리 코드 뷰어에서 표시하지 않습니다.
+                        이미지/PDF 파일은 히스토리 코드 뷰어에서 표시하지 않습니다.
                     </div>
                 ) : isInlineEditedFile ? (
                     <InlineHistoryDiffViewer
