@@ -10,7 +10,10 @@ const fs = require('fs/promises');
 const path = require('path');
 const crypto = require('crypto');
 
+// DB current_content로 저장할 수 있는 텍스트 계열 확장자입니다. cls/sty는 LaTeX 소스 의존 파일이라 업로드를 허용합니다.
 const TEXT_FILE_EXTENSIONS = new Set(['.tex', '.bib', '.txt', '.toc', '.sty', '.cls', '.md']);
+
+// 업로드 허용 목록은 확장자와 MIME 중 하나만 신뢰 가능한 경우도 통과시키기 위해 둘 다 검사합니다.
 const ALLOWED_UPLOAD_EXTENSIONS = new Set([
     ...TEXT_FILE_EXTENSIONS,
     '.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.pdf'
@@ -83,7 +86,7 @@ const entryLogic = {
         return path.basename(filename).replace(/[^\w.\-가-힣]/g, '_');
     },
 
-    /** 이미지 업로드 - 허용된 파일 타입 검증 */
+    /** 파일 업로드 - 확장자 또는 MIME 기준으로 허용 타입 검증 */
     isAllowedUploadFile: (file) => {
         if (!file) return false;
         const allowedMimeTypes = new Set([
@@ -152,7 +155,7 @@ const entryLogic = {
             await entryLogic.removeTempFile(uploadedFile.path);
             return { id: entryIdHex, title: safeFileName, assetUrl: null };
         } else {
-            // [이미지/PDF 등 바이너리 파일 처리 블록]
+            // 이미지/PDF 같은 asset은 DB 본문 대신 디스크 경로(assetUrl)로 관리합니다.
             const assetUrl = `/uploads/projects/${cleanProjectIdHex}/assets/${entryIdHex}/${safeFileName}`;
 
             await entryModel.createEntry(connection, {

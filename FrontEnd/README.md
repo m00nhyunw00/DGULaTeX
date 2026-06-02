@@ -67,13 +67,14 @@ EditorUI -> useEditor -> EditorService -> src/api/editor/* -> BackEnd API
 - 다중 선택에 메인 문서가 포함되면 삭제 메뉴 숨김
 - 마지막 편집 파일과 커서 위치 DB 저장 및 재입장 시 복원
 - 저장된 마지막 파일이 삭제된 경우 메인 문서 1행 1열로 fallback
-- 이미지 파일 전용 미리보기
+- 이미지/PDF 파일 전용 뷰어
+- PDF 파일 텍스트 선택/복사 지원
 - 자동 저장 및 자동 컴파일 연동
 - Ctrl/Cmd+S로 수동 컴파일 실행
 
 ## PDF Preview
 
-- PDF.js로 PDF 페이지 렌더링
+- 컴파일 결과 PDF와 업로드된 PDF 파일을 PDF.js로 렌더링
 - Text Layer를 활성화하여 PDF 텍스트 드래그/복사 지원
 - 확대/축소는 CSS scale 기반으로 처리하여 불필요한 재렌더링 최소화
 - PDF가 새로 생성되거나 최초 렌더링될 때만 갱신 오버레이 표시
@@ -108,8 +109,9 @@ EditorUI -> useEditor -> EditorService -> src/api/editor/* -> BackEnd API
 ## AI Chat UI
 
 - src/hooks/useChatAi.js와 src/services/ChatAiService.js를 통해 /api/chat 호출
-- 현재 편집 파일, 프로젝트 문맥, UI 질문 여부에 따라 백엔드에서 필요한 페르소나 컨텍스트를 선택적으로 구성
+- 현재 편집 파일, 프로젝트 문맥, 컴파일 로그, UI 질문 여부에 따라 백엔드에서 필요한 페르소나 컨텍스트를 선택적으로 구성
 - LaTeX 문법, 프로젝트 사용법, 컴파일 문제 해결 보조에 사용
+- 사용자가 보는 화면 기준으로 안내하며 내부 API/DB 구조 설명은 일반 사용자 질문 답변에 노출하지 않음
 
 ## 보안 관련 프론트엔드 기준
 
@@ -172,6 +174,7 @@ Vite 빌드 결과물은 FrontEnd/dist/에 생성되며 GitHub에는 업로드�
 - 루트 통합 실행에서 EADDRINUSE 또는 로딩 고착이 발생하면 npm run dev:fresh로 이전 개발 프로세스 정리
 - EditorPage에서 useEditor의 반환값이 EditorUI props로 모두 전달되는지 확인
 - PreviewUI 변경 시 PDF.js canvas layer와 textLayer가 함께 유지되는지 확인
+- 이미지/PDF를 열었을 때 Monaco Editor 대신 전용 뷰어가 표시되는지 확인
 - 파일 트리 변경 시 mainFileId 삭제 방지 로직이 깨지지 않는지 확인
 - viewer 권한에서 편집/저장/구조 변경이 막히는지 확인
 - 히스토리 롤백 후 Yjs와 DB 내용 동기화가 맞는지 확인
@@ -189,6 +192,7 @@ Vite 빌드 결과물은 FrontEnd/dist/에 생성되며 GitHub에는 업로드�
 - UI 컴포넌트는 가능한 한 props 기반으로 유지하고, API 호출은 hooks/services/api 계층에 둡니다.
 - .env는 GitHub에 올리지 않습니다.
 - VITE_API_URL을 변경한 뒤에는 프론트 dev 서버를 재시작해야 합니다.
+- 마지막 편집 세션 저장은 백엔드 `PUT /entries/session` 요청에 의존하므로, CORS 설정에 PUT이 빠지면 재입장 복원이 동작하지 않습니다.
 - VITE_YJS_URL을 변경한 뒤에도 프론트 dev 서버를 재시작해야 합니다.
 - 백엔드 포트가 5001/5002로 우회되면 FrontEnd/.env 또는 npm run dev:5001 스크립트를 맞춰 사용합니다.
 - Yjs 서버가 꺼져 있으면 편집기는 열려도 실시간 협업 동기화가 되지 않습니다.

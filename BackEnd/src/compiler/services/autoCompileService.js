@@ -78,7 +78,7 @@ exports.compileAuto = async ({
   });
 
   // 8. sanitize 실행
-  const sanitizeResult = await sanitizeService.sanitizeWorkspace(workspace.path);
+  const sanitizeResult = await sanitizeService.sanitizeWorkspace(workspace.path, { mainTexPath });
 
   // 9. Docker 컨테이너에서 LaTeX 컴파일
   let compileResult;

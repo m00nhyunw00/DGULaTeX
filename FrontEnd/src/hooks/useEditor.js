@@ -627,6 +627,9 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
             })
             .map((error) => {
                 const startLineNumber = Math.min(Math.max(error.lineNumber, 1), lineCount);
+                const lineContent = model.getLineContent?.(startLineNumber) || '';
+
+                if (lineContent.trim() === '') return null;
 
                 return {
                     severity: monaco.MarkerSeverity.Error,
@@ -636,7 +639,8 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
                     endLineNumber: startLineNumber,
                     endColumn: model.getLineMaxColumn?.(startLineNumber) || 1
                 };
-            });
+            })
+            .filter(Boolean);
 
         monaco.editor.setModelMarkers(model, 'latex-compile', markers);
     }, [
@@ -922,13 +926,68 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
         clearCapturedHistoryContributors
     ]);
     
-    const getCurrentUserId = useCallback(() => (
-        currentUser?.uuid ||
-        currentUser?.id ||
-        currentUser?.userId ||
-        ''
-    ), [currentUser]);
+    const isHexId = useCallback((value) => {
+        const clean = normalizeEntryId(value);
+        return /^[0-9a-f]{32}$/.test(clean) ? clean : '';
+    }, [normalizeEntryId]);
 
+    const getCurrentUserId = useCallback(() => (
+        isHexId(currentUser?.uuid) ||
+        isHexId(currentUser?.userId) ||
+        isHexId(currentUser?.id) ||
+        isHexId(typeof window !== 'undefined' ? window.localStorage.getItem('user_uuid') : '') ||
+        ''
+    ), [currentUser, isHexId]);
+
+    // 서버 세션 저장이 실패해도 같은 브라우저에서는 마지막 편집 위치를 복구할 수 있도록 localStorage 백업을 둡니다.
+    const getEditSessionStorageKey = useCallback((projectId, userId) => {
+        const cleanProjectId = normalizeEntryId(projectId);
+        const cleanUserId = normalizeEntryId(userId);
+
+        if (!cleanProjectId || !cleanUserId) return '';
+
+        return `dgu-latex:last-edit-session:${cleanProjectId}:${cleanUserId}`;
+    }, [normalizeEntryId]);
+
+    const saveLocalEditSession = useCallback((projectId, userId, sessionData) => {
+        if (typeof window === 'undefined') return;
+
+        const key = getEditSessionStorageKey(projectId, userId);
+        if (!key) return;
+
+        try {
+            window.localStorage.setItem(key, JSON.stringify({
+                ...sessionData,
+                projectId: normalizeEntryId(projectId),
+                userId: normalizeEntryId(userId),
+                updatedAt: new Date().toISOString()
+            }));
+        } catch (error) {
+            console.warn('[EDIT SESSION LOCAL SAVE FAILED]');
+        }
+    }, [getEditSessionStorageKey, normalizeEntryId]);
+
+    const readLocalEditSession = useCallback((projectId, userId) => {
+        if (typeof window === 'undefined') return null;
+
+        const key = getEditSessionStorageKey(projectId, userId);
+        if (!key) return null;
+
+        try {
+            const raw = window.localStorage.getItem(key);
+            if (!raw) return null;
+
+            const parsed = JSON.parse(raw);
+            if (!parsed || typeof parsed !== 'object') return null;
+
+            return parsed;
+        } catch (error) {
+            console.warn('[EDIT SESSION LOCAL READ FAILED]');
+            return null;
+        }
+    }, [getEditSessionStorageKey]);
+
+    // 협업 중 다른 사용자의 편집으로 줄/컬럼이 바뀌어도 현재 모델 범위 안으로 커서를 보정합니다.
     const normalizeEditorCursor = useCallback((cursor, editor = editorRef.current) => {
         const model = editor?.getModel?.();
         const lineCount = model?.getLineCount?.() || 1;
@@ -943,24 +1002,32 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
         return { lineNumber, column };
     }, []);
 
-    const saveCurrentEditSessionNow = useCallback(async (cursorOverride = null) => {
+    const saveEditSessionForFile = useCallback(async ({ fileId: targetFileId, cursor = null, shouldNormalize = true } = {}) => {
         const pId = selectedProject?.id || selectedProject?._id || selectedProject?.projectId;
         const userId = normalizeEntryId(getCurrentUserId());
-        const fileId = normalizeEntryId(activeFileIdRef.current);
+        const fileId = normalizeEntryId(targetFileId || activeFileIdRef.current);
 
-        if (!pId || !userId || !fileId || activeFileKindRef.current !== 'text') return;
+        if (!pId || !userId || !fileId) return;
 
-        const position = normalizeEditorCursor(
-            cursorOverride || editorRef.current?.getPosition?.() || { lineNumber: 1, column: 1 }
-        );
+        const rawCursor = cursor || editorRef.current?.getPosition?.() || { lineNumber: 1, column: 1 };
+        const position = shouldNormalize
+            ? normalizeEditorCursor(rawCursor)
+            : {
+                lineNumber: Math.max(Number.parseInt(rawCursor?.lineNumber ?? rawCursor?.cursorLine ?? 1, 10) || 1, 1),
+                column: Math.max(Number.parseInt(rawCursor?.column ?? rawCursor?.cursorColumn ?? 1, 10) || 1, 1)
+            };
 
-        const result = await EditorService.saveEditSession(pId, {
+        const sessionData = {
             userId,
             fileId,
             cursorLine: position.lineNumber,
             cursorColumn: position.column,
             lastPdfUrl: pdfUrl || null
-        });
+        };
+
+        saveLocalEditSession(pId, userId, sessionData);
+
+        const result = await EditorService.saveEditSession(pId, sessionData);
 
         if (!result.success) {
             console.warn('[EDIT SESSION SAVE FAILED]');
@@ -970,8 +1037,18 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
         getCurrentUserId,
         normalizeEntryId,
         normalizeEditorCursor,
-        pdfUrl
+        pdfUrl,
+        saveLocalEditSession
     ]);
+
+    const saveCurrentEditSessionNow = useCallback(async (cursorOverride = null) => {
+        if (activeFileKindRef.current !== 'text') return;
+
+        await saveEditSessionForFile({
+            cursor: cursorOverride || editorRef.current?.getPosition?.() || { lineNumber: 1, column: 1 },
+            shouldNormalize: true
+        });
+    }, [saveEditSessionForFile]);
 
     const scheduleCursorSessionSave = useCallback((position) => {
         if (suppressCursorSaveRef.current) return;
@@ -1000,11 +1077,12 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
         editor.setPosition(position);
         editor.revealPositionInCenterIfOutsideViewport(position);
         editor.focus();
+        saveCurrentEditSessionNow(position);
 
         setTimeout(() => {
             suppressCursorSaveRef.current = false;
         }, 0);
-    }, [normalizeEditorCursor]);
+    }, [normalizeEditorCursor, saveCurrentEditSessionNow]);
 
     const flushCurrentFileBeforeLeave = useCallback(async () => {
         const hadPendingDebounce = Boolean(saveTimerRef.current);
@@ -1079,6 +1157,7 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
         if (isImage || isPdf) {
             cleanupYjs();
 
+            activeFileKindRef.current = isPdf ? 'pdf' : 'image';
             setActiveFileKind(isPdf ? 'pdf' : 'image');
             setActiveFileMeta({
                 id: cleanId,
@@ -1105,6 +1184,8 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
             return;
         }
 
+        activeFileKindRef.current = 'text';
+        activeFileIdRef.current = cleanId;
         setActiveFileKind('text');
         setActiveFileMeta({
             id: cleanId,
@@ -1129,6 +1210,11 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
                 setActiveFileId(cleanId);
                 setSelectedIds([cleanId]);
                 setIsFileContentLoaded(true);
+                await saveEditSessionForFile({
+                    fileId: cleanId,
+                    cursor: options.cursor || { lineNumber: 1, column: 1 },
+                    shouldNormalize: false
+                });
             } else {
                 setIsFileContentLoaded(true);
                 alert("파일 내용을 불러오지 못했습니다.");
@@ -1620,6 +1706,7 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
 
         const initializeProjectEditor = async () => {
             const pId = selectedProject?.id || selectedProject?._id || selectedProject?.projectId;
+            const sessionUserId = normalizeEntryId(getCurrentUserId());
             const rawMainId = selectedProject.mainEntryId || selectedProject.mainFileId || selectedProject.lastOpenedFileId || '';
             const normalizedMainId = normalizeEntryId(rawMainId);
 
@@ -1669,20 +1756,34 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
 
             if (restoredFileId) {
                 targetFileId = restoredFileId;
-            } else if (pId) {
-                const userId = normalizeEntryId(getCurrentUserId());
+            } else if (pId && sessionUserId) {
+                const userId = sessionUserId;
 
                 if (userId) {
-                    const sessionResult = await EditorService.getEditSession(pId, userId);
+                    let sessionData = null;
 
-                    if (!isCancelled && sessionResult.success && sessionResult.data) {
-                        const sessionFileId = getOpenableFileId(sessionResult.data.fileId);
+                    try {
+                        const sessionResult = await EditorService.getEditSession(pId, userId);
+                        if (!isCancelled && sessionResult.success && sessionResult.data) {
+                            sessionData = sessionResult.data;
+                        }
+                    } catch (error) {
+                        console.warn('[EDIT SESSION RESTORE] server session lookup failed');
+                    }
+
+                    if (!sessionData) {
+                        // 서버 세션이 없거나 조회 실패 시 브라우저 백업값을 사용합니다.
+                        sessionData = readLocalEditSession(pId, userId);
+                    }
+
+                    if (!isCancelled && sessionData) {
+                        const sessionFileId = getOpenableFileId(sessionData.fileId);
 
                         if (sessionFileId) {
                             targetFileId = sessionFileId;
                             targetCursor = {
-                                lineNumber: sessionResult.data.cursorLine || 1,
-                                column: sessionResult.data.cursorColumn || 1
+                                lineNumber: sessionData.cursorLine || 1,
+                                column: sessionData.cursorColumn || 1
                             };
                         }
                     }
@@ -1712,7 +1813,7 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
         };
 
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedProject]);
+    }, [selectedProject, currentUser?.uuid, currentUser?.id, currentUser?.userId]);
 
     const handleCreateEntry = async (title, isFolder, parentId = null) => {
         if (!canEditProjectRef.current) {
@@ -2485,7 +2586,8 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
 
     const handleSocketTreeUpdated = useCallback(async (payload) => {
 
-        await refreshTree();
+        const refreshedTree = await refreshTree();
+        const latestTree = refreshedTree || filesRef.current || [];
 
         if (payload?.action === 'main-entry' && payload?.entryId) {
             setMainFileId(
@@ -2508,6 +2610,11 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
             );
 
             if (deletedIds.includes(activeFileIdRef.current)) {
+                const fallbackMainId = normalizeEntryId(mainFileId);
+                const fallbackMainEntry = fallbackMainId && !deletedIds.includes(fallbackMainId)
+                    ? findEntryById(latestTree, fallbackMainId)
+                    : null;
+
                 cleanupYjs();
 
                 setActiveFileId('');
@@ -2518,9 +2625,17 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
                 setActiveFileMeta(null);
                 setActiveImageUrl('');
                 setIsFileContentLoaded(false);
+
+                if (fallbackMainEntry && !(fallbackMainEntry.type === 'folder' || fallbackMainEntry.isFolder || fallbackMainEntry.is_folder)) {
+                    await handleOpenFile(fallbackMainId, {
+                        cursor: { lineNumber: 1, column: 1 },
+                        tree: latestTree,
+                        skipFlush: true
+                    });
+                }
             }
         }
-    }, [refreshTree, cleanupYjs]);
+    }, [refreshTree, cleanupYjs, findEntryById, handleOpenFile, mainFileId, normalizeEntryId]);
 
     return {
         files,

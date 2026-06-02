@@ -94,7 +94,7 @@ const detectPromptNeeds = (messages = []) => {
     const needsLatex = includesAny(text, ['latex', '라텍', '문법', '검사', '오류', '에러', '컴파일', '수식', '표', '그림', '이미지', '패키지', '인용', '참조', '고쳐', '수정', '코드', '본문', '문서', 'preamble', '프리앰블', 'begin', 'end']);
     const needsCompiler = includesAny(text, ['컴파일러', '컴파일 방식', 'pdflatex', 'xelatex', 'lualatex', '한글', '폰트', 'fontspec', 'kotex', 'luatexko', 'xecjk', 'auto', '자동 컴파일']);
     const needsPreview = needsCompiler || includesAny(text, ['preview', '미리보기', 'pdf', '다운로드', '로그', 'compile', '확대', '축소', 'zoom', '보이지', '안 보여', '안보여', '복사', '드래그', '텍스트 선택', 'pdf 갱신']);
-    const needsFileTree = includesAny(text, ['파일', '폴더', 'file tree', '파일 트리', '새 파일', '새 폴더', '업로드', '다운로드', '이름 변경', 'rename', 'delete', '삭제', '메인 문서', 'main document', '드래그']);
+    const needsFileTree = includesAny(text, ['파일', '폴더', 'file tree', '파일 트리', '새 파일', '새 폴더', '업로드', '다운로드', '이름 변경', 'rename', 'delete', '삭제', '메인 문서', 'main document', '확장자', 'unsupported', '지원하지 않는', 'mime', '드래그']);
     const needsEditorToolbar = includesAny(text, ['툴바', '버튼', '루트', '제곱근', 'sqrt', '굵게', '기울임', '위첨자', '아래첨자', '분수', '링크', '라벨', 'cite', '인용', '표', '목록', '환경', '수식']);
     const needsCollaboration = includesAny(text, ['공유', '멤버', '권한', '초대', '참가', '요청', 'owner', 'editor', 'viewer', '소유자', '강퇴', '소유권']);
     const needsHistory = includesAny(text, ['history', '히스토리', '롤백', 'rollback', 'restore', '복구', '버전', '이력']);
@@ -176,7 +176,10 @@ const COMPILER_UI_PROMPT = [
 const FILE_TREE_UI_PROMPT = [
     '왼쪽 File tree:',
     '- 헤더의 📄+ 버튼(title 새 파일)은 새 파일, 📁+ 버튼(title 새 폴더)은 새 폴더, 📤 버튼(title 업로드)은 업로드 모달을 엽니다.',
-    '- 파일 또는 폴더 클릭은 항목 선택입니다. 텍스트 파일은 중앙 에디터에 열리고, 이미지 파일은 이미지 뷰어에 열립니다.',
+    '- 파일 또는 폴더 클릭은 항목 선택입니다. 텍스트 파일은 중앙 에디터에 열리고, 이미지 파일과 PDF 파일은 중앙 뷰어에 열립니다.',
+    '- PDF 파일을 열면 페이지 미리보기와 텍스트 선택/복사를 사용할 수 있습니다.',
+    '- 업로드 실패 메시지에 확장자와 MIME이 표시되면, 해당 값 기준으로 지원 여부를 확인하도록 안내합니다.',
+    '- 확장자가 없는 latexmkrc, bcf 같은 보조/산출물 파일은 일반적으로 업로드 대상이 아니며, 컴파일에 반드시 필요한 소스 파일인지 먼저 확인하도록 안내합니다.',
     '- 우클릭 메뉴는 Rename, Download, 👑 Set as main document, Delete, New file, New folder, Upload입니다.',
     '- 현재 메인 문서로 지정된 파일은 우클릭 메뉴에서 Delete가 보이지 않습니다.',
     '- 여러 항목 선택 상태에서도 선택 목록에 메인 문서가 포함되어 있으면 Delete N items 옵션이 보이지 않습니다.',
@@ -191,7 +194,7 @@ const EDIT_SESSION_UI_PROMPT = [
     '- 프로젝트에 다시 들어오면 마지막으로 편집하던 텍스트 파일을 우선 열고 저장된 커서 위치로 이동합니다.',
     '- 그 사이 다른 사람이 파일을 편집했으면 현재 파일의 실제 줄 수와 컬럼 범위 안으로 커서 위치를 보정합니다.',
     '- 저장된 마지막 파일이 삭제되었거나 열 수 없는 파일이면 메인 문서의 1행 1열로 이동합니다.',
-    '- 이미지 파일은 텍스트 커서 복원 대상이 아니며 이미지 뷰어로 열립니다.'
+    '- 이미지/PDF 파일은 텍스트 커서 복원 대상이 아니며 전용 뷰어로 열립니다.'
 ].join('\n');
 
 const COLLABORATION_UI_PROMPT = [
@@ -215,7 +218,7 @@ const HISTORY_UI_PROMPT = [
     '- 오른쪽 히스토리 목록 제목은 Recent Activity입니다.',
     '- 히스토리 항목의 ⋮ 메뉴에는 Download version과 owner 전용 Rollback Project가 있습니다.',
     '- 파일 롤백 확인 모달 제목은 파일 롤백 확인이고, 프로젝트 롤백 확인 모달 제목은 프로젝트 롤백 확인입니다.',
-    '- 이미지 파일은 현재 파일 롤백 대상에서 제외될 수 있습니다.'
+    '- 이미지/PDF 파일은 히스토리 코드 뷰어에 표시되지 않고 현재 파일 롤백 대상에서 제외될 수 있습니다.'
 ].join('\n');
 
 const DASHBOARD_UI_PROMPT = [

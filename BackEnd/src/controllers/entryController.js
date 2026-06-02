@@ -577,7 +577,15 @@ const entryController = {
             //  Buffer로 변환
             const projectIdBuffer = entryLogic.hexToBuffer(projectId);
             const userIdBuffer = entryLogic.hexToBuffer(userId);
-            const fileIdBuffer = entryLogic.hexToBuffer(fileId); // 내부적으로 null 체크.
+            const fileIdBuffer = entryLogic.hexToBuffer(fileId);
+
+            if (!projectIdBuffer || !userIdBuffer || !fileIdBuffer) {
+                return res.status(400).json({
+                    status: "error",
+                    statusCode: 400,
+                    message: "유효하지 않은 에디터 세션 식별자입니다."
+                });
+            }
 
             // 생성(INSERT) 시 사용될 session_id용 바이너리 
             const sessionIdBuffer = entryLogic.generateBinaryId();
@@ -630,6 +638,14 @@ const entryController = {
             //  entryLogic 헬퍼를 사용해 Hex를 Buffer로 변환
             const projectIdBuffer = entryLogic.hexToBuffer(projectId);
             const userIdBuffer = entryLogic.hexToBuffer(userId);
+
+            if (!projectIdBuffer || !userIdBuffer) {
+                return res.status(400).json({
+                    status: "error",
+                    statusCode: 400,
+                    message: "유효하지 않은 에디터 세션 조회 식별자입니다."
+                });
+            }
 
             //존재하는 유저인지 확인
             const isUserExist = await userModel.checkUserExistsById(connection, userIdBuffer);

@@ -89,7 +89,7 @@ exports.compileManual = async ({
     // 8. [보안] 악성 스크립트 제거(Sanitize) 공정 가동 (선택적)
     let sanitizeResult = { sanitized: false, compileLog: '' };
     if (forceSanitize) {
-      sanitizeResult = await sanitizeService.sanitizeWorkspace(workspace.path);
+      sanitizeResult = await sanitizeService.sanitizeWorkspace(workspace.path, { mainTexPath });
     }
 
     // 9. [컴파일] Docker 컨테이너 내 LaTeX 컴파일 가동

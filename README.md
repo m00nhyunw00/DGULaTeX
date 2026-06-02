@@ -42,12 +42,12 @@ DGULaTeX는 단순 CRUD 웹앱이 아니라 편집기, 실시간 동기화, 파�
 | :--- | :--- |
 | 인증 | 회원가입, 로그인, 세션 유지, 로그아웃, 비밀번호 변경, 회원 탈퇴 |
 | 프로젝트 | 프로젝트 생성/조회/이름 변경/삭제, 프로젝트 ZIP 다운로드 |
-| 파일 트리 | 파일/폴더 생성, 이름 변경, 이동, 삭제, 업로드, 다운로드, 메인 문서 지정 |
+| 파일 트리 | 파일/폴더 생성, 이름 변경, 이동, 삭제, 업로드, 다운로드, 메인 문서 지정, 지원하지 않는 업로드 파일의 확장자/MIME 안내 |
 | 편집기 | Monaco Editor 기반 LaTeX 편집, 툴바 스니펫, 자동 저장, 마지막 편집 파일과 커서 위치 복원 |
 | 협업 | Yjs + y-websocket 기반 실시간 공동 편집, 사용자별 원격 커서 표시 |
 | 권한 | 프로젝트 초대 코드, 참여 요청 승인/거절, 멤버 권한 변경, 소유권 이전 |
 | 컴파일 | Docker 기반 LaTeX 컴파일, 수동/자동 컴파일, pdflatex/xelatex/lualatex 선택, 2-pass 컴파일 |
-| PDF 미리보기 | PDF.js 기반 미리보기, 텍스트 선택/복사, CSS scale 기반 확대/축소 |
+| PDF 미리보기 | 컴파일 결과 PDF 및 업로드 PDF 미리보기, 텍스트 선택/복사, CSS scale 기반 확대/축소 |
 | 컴파일 로그 | 성공/실패 시간 표시, Engine/Passes 요약, Pass/Result/Warning/Error 카드 UI |
 | 히스토리 | 코드/구조 변경 히스토리 저장, 파일 단위/프로젝트 단위 롤백 |
 | AI 도우미 | OpenAI API 기반 LaTeX/프로젝트 보조, 질문 유형별 페르소나 컨텍스트 선택 적용 |
@@ -58,6 +58,7 @@ DGULaTeX는 단순 CRUD 웹앱이 아니라 편집기, 실시간 동기화, 파�
 - 세션 토큰은 프론트엔드에서 API 요청 시 Authorization 헤더로 전달하고, 백엔드는 sessionStore에서 토큰 유효성을 검증합니다.
 - CORS 허용 출처는 `CORS_ORIGIN` 환경 변수로 제한합니다. 개발 기본값은 `http://localhost:5173`입니다.
 - `VITE_API_URL`, `VITE_YJS_URL`, DB 접속 정보, OpenAI Key, Yjs 포트는 `.env.example` 기준으로 환경 변수화했습니다.
+- 편집 세션 저장은 `PUT /api/projects/:projectId/entries/session`을 사용하므로 CORS 허용 메서드에 `PUT`이 포함되어야 합니다.
 - 브라우저 콘솔에는 로그인 실패 상세, 학번, UUID, 프로젝트 ID, API payload, 세션 관련 값이 직접 출력되지 않도록 정리했습니다.
 - 백엔드 로그도 에러 객체 전체나 내부 파일 경로를 그대로 출력하지 않고, 운영 확인에 필요한 고정 태그와 최소 메시지 중심으로 남깁니다.
 - 실제 `.env`, 업로드 파일, 컴파일 PDF, 런타임 로그는 GitHub에 올리지 않습니다.
@@ -205,6 +206,10 @@ npm --prefix FrontEnd run dev
 | Yjs WebSocket | ws://localhost:1234 |
 
 SSH Remote 또는 GPU 서버 환경에서는 VS Code Ports 탭에서 5173, 5000, 1234 포트가 모두 포워딩되어야 합니다. 포트가 이미 사용 중이면 npm run dev는 새 서버를 띄우지 않고 dev:fresh/stop:dev 안내를 출력합니다.
+
+## 업로드 파일 기준
+
+지원 텍스트 파일은 `.tex`, `.bib`, `.txt`, `.toc`, `.sty`, `.cls`, `.md`입니다. 이미지/PDF 에셋은 `.png`, `.jpg`, `.jpeg`, `.gif`, `.webp`, `.svg`, `.pdf`를 지원합니다. 확장자가 없는 `latexmkrc`나 컴파일 산출물인 `.bcf`처럼 지원 목록에 없는 파일은 업로드가 거부될 수 있으며, 오류 메시지에 파일명, 확장자, MIME 정보가 표시됩니다.
 
 ## 컴파일 환경
 

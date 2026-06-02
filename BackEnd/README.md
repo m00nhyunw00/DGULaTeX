@@ -136,6 +136,7 @@ database: process.env.DB_NAME
 ## 보안 및 로그 관리
 
 - `CORS_ORIGIN`으로 허용 프론트엔드 출처를 제한합니다.
+- 편집 세션 저장 API가 PUT 메서드를 사용하므로 server.js의 CORS 허용 메서드에 `PUT`을 포함해야 합니다.
 - DB 접속 정보, OpenAI API Key, Yjs Host/Port, Docker 이미지명, 업로드 루트는 `.env`에서만 관리합니다.
 - 실제 `.env`는 GitHub에 업로드하지 않고, 공유 문서는 `.env.example`만 사용합니다.
 - 서버 로그에는 학번, 비밀번호, 세션 토큰, UUID, 프로젝트 내부 ID, 요청 payload, 절대 파일 경로를 직접 출력하지 않습니다.
@@ -144,8 +145,9 @@ database: process.env.DB_NAME
 
 ## 파일/엔트리 저장 방식
 
-- .tex, .bib 등 텍스트 파일은 DB current_content 중심으로 저장합니다.
-- 이미지/바이너리 에셋은 public/uploads/projects/... 아래에 저장하고 DB에는 메타데이터와 경로를 저장합니다.
+- `.tex`, `.bib`, `.txt`, `.toc`, `.sty`, `.cls`, `.md` 텍스트 파일은 DB current_content 중심으로 저장합니다.
+- `.png`, `.jpg`, `.jpeg`, `.gif`, `.webp`, `.svg`, `.pdf` 에셋은 public/uploads/projects/... 아래에 저장하고 DB에는 메타데이터와 경로를 저장합니다.
+- 지원하지 않는 업로드 파일은 파일명, 확장자, MIME 정보를 포함해 응답하므로 프론트에서 사용자에게 원인을 안내할 수 있습니다.
 - 파일/폴더 구조는 entries 계열 테이블과 parent_id 관계를 통해 트리로 복원합니다.
 - 메인 문서는 projects.main_entry_id로 관리합니다.
 - 메인 문서를 삭제하지 못하게 하는 1차 UX 방어는 프론트엔드에서 처리합니다.
@@ -179,7 +181,8 @@ Docker 이미지가 없다면 src/compiler/docker/Dockerfile을 기준으로 TeX
 - OPENAI_API_KEY가 필요합니다.
 - 질문 유형에 따라 UI 설명 페르소나, LaTeX 보조 페르소나, 실행 환경 페르소나, 일반 코드 설명 컨텍스트를 선택적으로 구성합니다.
 - UI 관련 질문이 아닐 때는 긴 UI 페르소나를 생략하여 토큰 사용량을 줄입니다.
-- 현재 활성 파일과 참조 파일 컨텍스트를 함께 전달해 LaTeX 문법/컴파일 문제를 보조합니다.
+- 현재 활성 파일, 참조 파일, 최근 컴파일 로그를 함께 전달해 LaTeX 문법/컴파일 문제를 보조합니다.
+- 사용자 안내 페르소나는 실제 화면 조작 기준으로 작성하며 일반 사용자 질문에 내부 API/DB 구조 설명을 노출하지 않습니다.
 
 ## 히스토리
 
@@ -198,6 +201,7 @@ Docker 이미지가 없다면 src/compiler/docker/Dockerfile을 기준으로 TeX
 - public/compiled, public/uploads, runtime 디렉토리 권한 확인
 - OPENAI_API_KEY 설정 여부 확인
 - CORS_ORIGIN이 실제 프론트엔드 주소와 일치하는지 확인
+- 세션 복원이 안 되면 브라우저 콘솔에서 `PUT /entries/session` CORS 차단 여부 확인
 - 신규 디버깅 로그 추가 시 사용자 식별자, 세션 토큰, payload, 내부 경로가 포함되지 않는지 확인
 - SSH Remote 환경이면 5000, 1234 포트 포워딩 확인
 
