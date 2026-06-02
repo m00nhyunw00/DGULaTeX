@@ -1,0 +1,54 @@
+/**
+ * =================================================================
+ * [Style] Login Page Styles
+ * 설명: Login Page 화면의 레이아웃, 색상, 반응형 스타일을 정의함
+ * =================================================================
+ */
+/* ---------------------------------------------------------
+ * SECTION 1: Full-Screen Background Wrapper
+ * 기능: 브라우저 전체 화면을 점유하는 배경 컨테이너 정의
+ * --------------------------------------------------------- */
+.login-page-wrapper {
+    height: 100vh; /* 뷰포트 높이 100% 점유 */
+    width: 100vw;  /* 뷰포트 너비 100% 점유 */
+
+    /* 배경 이미지 설정 */
+    background-image: url('/home/capston26/DguLaTex/FrontEnd/src/assets/dgu_logo.png');
+    background-size: cover;      /* 요소 크기에 맞춰 이미지 비율 유지하며 꽉 채움 */
+    background-position: center; /* 이미지를 중앙 정렬하여 주요 피사체 노출 보장 */
+    background-repeat: no-repeat;
+
+    position: relative;
+    overflow: hidden; /* 배경 요소로 인한 불필요한 스크롤 발생 방지 */
+}
+
+/* ---------------------------------------------------------
+ * SECTION 2: Left Sidebar (File Tree) - CSS 보정
+ * --------------------------------------------------------- */
+.sidebar {
+    width: 250px;
+    background-color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    border: 2px solid #dee2e6;
+    /* transition에서 border를 제외하여 브라우저의 마우스 이탈 감지 속도를 높임 */
+    transition: background-color 0.2s, opacity 0.2s; 
+    box-sizing: border-box;
+    position: relative;
+    z-index: 1;
+}
+
+/** [중요] 최상위 드롭 시 하이라이트 - transition 없이 즉시 반응 */
+.sidebar.drag-over-root {
+    border: 2px solid var(--dgu-orange) !important;
+    box-shadow: inset 0 0 8px var(--dgu-orange-light);
+    outline: none;
+}
+
+/* 트리 컨테이너 내에서 드래그 이벤트가 끊기지 않도록 설정 */
+.file-tree-container {
+    flex: 1;
+    overflow-y: auto;
+    position: relative;
+}

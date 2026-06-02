@@ -1,0 +1,84 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+FrontEnd/.env
+FrontEnd/.env.*
+BackEnd/.env
+BackEnd/.env.*
+
+# Frontend build/cache
+FrontEnd/dist/
+FrontEnd/.vite/
+FrontEnd/.cache/
+coverage/
+
+# Backend runtime outputs
+BackEnd/runtime/
+BackEnd/public/compiled/
+BackEnd/public/uploads/
+BackEnd/src/compiler/output/
+BackEnd/src/compiler/latexTest/output/
+BackEnd/compiler/output/
+BackEnd/compiler/latexTest/output/
+
+# LaTeX generated files
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.run.xml
+*.synctex.gz
+*.toc
+*.xdv
+*.nav
+*.snm
+*.vrb
+
+# Generated PDFs and archives
+*.pdf
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+
+# Upload/test scratch files
+BackEnd/upload_folder/
+BackEnd/upload_test_file.tex
+BackEnd/test_image.png
+BackEnd/*.http
+BackEnd/api_full_test.js
+n
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS generated files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor / IDE settings
+.vscode/
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+gen/
+*.sw?
+
+# Misc
+*.sln

@@ -1,0 +1,325 @@
+/**
+ * =================================================================
+ * [Style] Login UI Styles
+ * 설명: Login UI 화면의 레이아웃, 색상, 반응형 스타일을 정의함
+ * =================================================================
+ */
+/* ---------------------------------------------------------
+ * SECTION 0: Login Page Layout Parent Container
+ * 기능: 화면 전체를 채우고, 자식인 로그인 카드를 정중앙에 배치
+ * --------------------------------------------------------- */
+.login-page-container {
+    width: 100vw;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center; /* 가로 정중앙 정렬 정적 매핑 */
+    align-items: center;     /* 세로 정중앙 정렬 정적 매핑 */
+    
+    /* [핵심 수정] 기존 그라데이션 배경을 삭제하고 완전히 투명하게 처리합니다.
+     * 이렇게 해야 기존 프로젝트에 설정되어 있던 소중한 배경화면 이미지가 
+     * 가려지지 않고 투명하게 뒤로 비쳐 보이게 됩니다. */
+    background: transparent !important; 
+    
+    margin: 0;
+    padding: 24px;
+    overflow-y: auto; /* 회원가입 폼 확장 시 작은 화면에서도 접근 가능 */
+}
+
+/* ---------------------------------------------------------
+ * SECTION 1: Login Card Container (Glassmorphism)
+ * 기능: 로그인 폼을 감싸는 카드 본체의 질감 및 형태 정의
+ * --------------------------------------------------------- */
+.login-card-glass {
+    width: 100%;
+    max-width: 420px;
+    padding: 3rem 2.5rem;
+
+    /* 배경 이미지 투과를 위한 반투명 및 배경 흐림 효과 */
+    background: rgba(255, 255, 255, 0.82); /* 82% 불투명도의 화이트 투명 레이어 */
+    backdrop-filter: blur(12px);          /* 배경 픽셀 흐림 밀도 설정 */
+    -webkit-backdrop-filter: blur(12px); /* 크로스 브라우징 가드 (Safari) */
+
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.4); /* 은은한 엣지 하이라이트 유리 테두리 */
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.05); /* 카드 부유 느낌을 위한 소프트 섀도우 */
+}
+
+/* ---------------------------------------------------------
+ * SECTION 2: Typography & Branding
+ * 기능: 서비스 로고 및 텍스트의 브랜드 정체성 확립
+ * --------------------------------------------------------- */
+.dgu-logo {
+    color: #f15a24; /* 동국대학교 공식 브랜드 주황색(DGU Orange) */
+    font-weight: 800;
+    font-size: 2.6rem;
+    letter-spacing: -1.5px; /* 타이포그래피 밀도를 높여 가독성 및 디자인적 완성도 향상 */
+}
+
+/* ---------------------------------------------------------
+ * SECTION 3: Form Elements (Inputs & Intersections)
+ * 기능: 사용자가 텍스트를 입력하는 필드의 스타일 및 포커스 상태 정의
+ * --------------------------------------------------------- */
+.dgu-input {
+    border-radius: 10px !important; /* 입력 필드의 모서리를 부드럽게 라운딩 처리 */
+}
+
+/* 입력 필드 활성화(Focus) 상태의 브랜드 시각 피드백 */
+.dgu-input:focus {
+    border-color: #f15a24 !important;
+    /* 주황색 테두리와 함께 은은한 글로우 효과(Shadow)를 부여하여 가시성 확보 */
+    box-shadow: 0 0 0 0.25rem rgba(241, 90, 36, 0.15) !important;
+}
+
+/* 부트스트랩 form-floating 라벨 포커스 시 폰트 색상 디바이스 매핑 */
+.form-floating > .form-control:focus ~ label {
+    color: #f15a24;
+}
+
+/* ---------------------------------------------------------
+ * SECTION 4: Action Buttons
+ * 기능: 로그인 버튼의 물리적 피드백(Hover, Active) 및 색상 정의
+ * --------------------------------------------------------- */
+.btn-dgu-primary {
+    background-color: #f15a24 !important; /* 메인 액션 버튼에 브랜드 컬러 적용 */
+    color: white !important;
+    border: none !important;
+    border-radius: 10px !important;
+    transition: all 0.2s ease; /* 상태 변화 시 부드러운 애니메이션 효과 적용 */
+}
+
+/* 마우스 호버 시: 색상을 명도를 조절하고 버튼을 살짝 위로 띄움(Floating) */
+.btn-dgu-primary:hover {
+    background-color: #d44e1e !important;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(241, 90, 36, 0.2);
+}
+
+/* 마우스 클릭 시: 버튼이 눌리는 물리적 인터랙션 시뮬레이션 */
+.btn-dgu-primary:active {
+    transform: translateY(0);
+}
+
+/* ---------------------------------------------------------
+ * SECTION 5: Authentication Mode Tabs
+ * 기능: 로그인/회원가입 모드를 전환하는 탭 컨트롤 스타일 정의
+ * --------------------------------------------------------- */
+.auth-mode-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    padding: 5px;
+    margin-bottom: 1.25rem;
+    background-color: rgba(15, 23, 42, 0.06);
+    border-radius: 10px;
+}
+
+.auth-mode-tabs button {
+    height: 40px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #64748b;
+    font-size: 0.92rem;
+    font-weight: 700;
+    transition: background-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.auth-mode-tabs button.active {
+    background-color: #ffffff;
+    color: #f15a24;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+}
+
+.auth-mode-tabs button:focus-visible {
+    outline: 2px solid rgba(241, 90, 36, 0.35);
+    outline-offset: 2px;
+}
+
+.auth-sub-action {
+    margin-top: 0.85rem;
+    text-align: center;
+}
+
+.auth-link-button {
+    border: 0;
+    padding: 0.2rem 0.35rem;
+    background: transparent;
+    color: #64748b;
+    font-size: 0.86rem;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.auth-link-button:hover:not(:disabled),
+.auth-link-button:focus-visible:not(:disabled) {
+    color: #f15a24;
+}
+
+.auth-link-button:disabled {
+    opacity: 0.6;
+}
+
+.auth-form-heading {
+    margin-bottom: 1rem;
+    text-align: center;
+    color: #334155;
+    font-size: 0.98rem;
+}
+
+
+.login-credit {
+    margin-top: 1.35rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(100, 116, 139, 0.14);
+    text-align: center;
+    color: #94a3b8;
+    font-size: 0.78rem;
+}
+
+.team-credit-link {
+    border: 0;
+    padding: 0;
+    background: transparent;
+    color: #64748b;
+    font: inherit;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.team-credit-link:hover,
+.team-credit-link:focus-visible {
+    color: #f15a24;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.team-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1050;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(15, 23, 42, 0.28);
+    backdrop-filter: blur(4px);
+}
+
+.team-modal {
+    width: min(100%, 460px);
+    padding: 1.35rem;
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 20px 50px rgba(15, 23, 42, 0.18);
+}
+
+.team-modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.team-modal-kicker {
+    margin: 0 0 0.2rem;
+    color: #94a3b8;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.team-modal h2 {
+    margin: 0;
+    color: #1e293b;
+    font-size: 1.15rem;
+    font-weight: 800;
+}
+
+.team-modal-close {
+    width: 32px;
+    height: 32px;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(15, 23, 42, 0.06);
+    color: #64748b;
+    font-size: 1.25rem;
+    line-height: 1;
+}
+
+.team-modal-close:hover,
+.team-modal-close:focus-visible {
+    background: rgba(241, 90, 36, 0.12);
+    color: #f15a24;
+}
+
+.team-member-list {
+    display: grid;
+    gap: 0.65rem;
+}
+
+.team-member-item {
+    padding: 0.85rem 0;
+    border-top: 1px solid rgba(100, 116, 139, 0.16);
+}
+
+.team-member-item:first-child {
+    border-top: 0;
+}
+
+.team-member-item strong {
+    color: #1e293b;
+    font-size: 0.98rem;
+}
+
+.team-member-role {
+    display: inline-flex;
+    align-items: center;
+    width: 64px;
+    flex: 0 0 64px;
+    margin-right: 0.55rem;
+    color: #f15a24;
+    font-size: 0.78rem;
+    font-weight: 800;
+}
+
+.team-member-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 0.65rem;
+    margin-top: 0.3rem;
+    padding-left: 4.55rem;
+    color: #64748b;
+    font-size: 0.8rem;
+}
+
+.team-member-part {
+    margin-top: 0.28rem;
+    padding-left: 4.55rem;
+    color: #475569;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+/* ---------------------------------------------------------
+ * SECTION 6: Responsive Auth Form
+ * 기능: 작은 화면에서 로그인/회원가입 카드가 화면 밖으로 밀리지 않도록 보정
+ * --------------------------------------------------------- */
+@media (max-width: 480px) {
+    .login-page-container {
+        padding: 16px;
+        align-items: flex-start;
+    }
+
+    .login-card-glass {
+        padding: 2rem 1.35rem;
+        margin-top: 16px;
+    }
+
+    .dgu-logo {
+        font-size: 2.25rem;
+    }
+}

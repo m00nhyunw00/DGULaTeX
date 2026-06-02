@@ -1,0 +1,114 @@
+/**
+ * =================================================================
+ * [Style] App Styles
+ * 설명: App 화면의 레이아웃, 색상, 반응형 스타일을 정의함
+ * =================================================================
+ */
+/* ---------------------------------------------------------
+ * SECTION 1: Global Reset & Viewport Base
+ * 기능: 브라우저 간 일관된 렌더링을 위해 기본 여백을 강제 초기화하고
+ * 어플리케이션이 뷰포트 전체를 점유하도록 설정함.
+ * --------------------------------------------------------- */
+html, body, #root {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100vw !important; /* 브라우저 가로 너비 100% 점유 */
+    height: 100vh !important; /* 브라우저 세로 높이 100% 점유 */
+
+    /* 어플리케이션 내부(Dashboard, Editor 등)에서 개별 스크롤을 관리하므로
+       최상위 바디의 스크롤은 차단하여 레이아웃 무너짐을 방지함 */
+    overflow: hidden;
+
+    background-color: #f8f9fa;
+    font-family: 'Pretendard', -apple-system, sans-serif; /* 한글 가독성에 최적화된 Pretendard 우선 적용 */
+}
+
+/* ---------------------------------------------------------
+ * SECTION 2: Design System Tokens (Global Variables)
+ * 기능: 동국대학교 브랜드 가이드를 준수하는 전역 컬러 및 시각 효과 정의.
+ * --------------------------------------------------------- */
+:root {
+    --dgu-orange: #F37321;      /* 동국대학교 공식 상징색 (Primary) */
+    --dgu-orange-dark: #d65f1a; /* 버튼 호버 등 인터랙션을 위한 다크 톤 */
+    --dgu-shadow: 0 0 20px rgba(0,0,0,0.4); /* 모달이나 카드에 사용되는 깊이감 있는 그림자 */
+}
+
+.session-expired-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 3000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.42);
+}
+
+.session-expired-modal-box {
+    width: min(420px, calc(100vw - 40px));
+    padding: 28px;
+    border-radius: 8px;
+    background: #ffffff;
+    text-align: center;
+}
+
+/* ---------------------------------------------------------
+ * SECTION 3: Utility Classes & Shared Components
+ * 기능: 프로젝트 전반에 걸쳐 공통적으로 재사용되는 유틸리티 클래스.
+ * --------------------------------------------------------- */
+
+/* 텍스트 하이라이트: 브랜드 주황색 적용 */
+.text-dgu {
+    color: var(--dgu-orange) !important;
+}
+
+/* 브랜드 프라이머리 버튼 (DGU Button)
+ * 기능: 강조가 필요한 주요 액션(로그인, 생성 등)에 사용됨.
+ */
+.btn-dgu {
+    background-color: var(--dgu-orange) !important;
+    border-color: var(--dgu-orange) !important;
+    color: white !important;
+    font-weight: bold;
+    transition: 0.2s ease-in-out; /* 상태 변화 시 부드러운 전환 효과 */
+}
+
+/* 버튼 인터랙션: 호버 시 색상을 어둡게 하고 미세하게 띄우는 피드백 제공 */
+.btn-dgu:hover {
+    background-color: var(--dgu-orange-dark) !important;
+    transform: translateY(-1px); /* 물리적 버튼 클릭감을 위한 부유 효과 */
+}
+
+/* ---------------------------------------------------------
+ * SECTION 5: Collaborative Cursor Decorations
+ * 기능: y-monaco가 생성하는 원격 선택 영역과 커서 막대를 화면에 표시함.
+ * --------------------------------------------------------- */
+.yRemoteSelection {
+    background-color: rgba(47, 128, 237, 0.18);
+}
+
+.yRemoteSelectionHead {
+    position: absolute;
+    box-sizing: border-box;
+    border-left: 2px solid #2f80ed;
+    height: 100%;
+    z-index: 20;
+}
+
+.yRemoteSelectionHead::after {
+    content: "User";
+    position: absolute;
+    top: -1.45rem;
+    left: -2px;
+    max-width: 160px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: #2f80ed;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    pointer-events: none;
+}

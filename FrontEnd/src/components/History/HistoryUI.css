@@ -1,0 +1,401 @@
+/**
+ * =================================================================
+ * [Style] History UI Styles
+ * 설명: History UI 화면의 레이아웃, 색상, 반응형 스타일을 정의함
+ * =================================================================
+ */
+/* ---------------------------------------------------------
+ * SECTION 0: Global Layout Wrapper
+ * 기능: 히스토리 모드 전체의 뷰포트 고정 및 영역별 독립 스크롤 정의
+ * --------------------------------------------------------- */
+.history-mode {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden; /* 레이아웃 깨짐 방지를 위한 전역 스크롤 차단 */
+}
+
+.history-mode .main-content {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    /* 상단 네비바 높이 변수를 활용하여 에디터 화면과 동일한 시작점 유지 */
+    height: calc(100vh - var(--nav-height));
+}
+
+/* ---------------------------------------------------------
+ * SECTION 1: Top Navigation Bar
+ * 기능: 상단 네비게이션 바 영역
+ * --------------------------------------------------------- */
+.history-mode .nav-back-btn {
+    padding: 0;
+    margin-right: 0.5rem; /* 에디터UI와 동일한 간격으로 고정 효과 구현 */
+}
+
+/* 뒤로가기 화살표 */
+.history-mode .nav-arrow {
+    color: white;
+    font-weight: bold;
+    font-size: 1.5rem;
+    line-height: 1;
+}
+
+/* 프로젝트 타이틀 구분선 */
+.history-mode .project-title-divider {
+    margin-left: 0.5rem;
+    padding-left: 1rem;
+    border-left: 1px solid #444; /* 시각적 노이즈를 최소화한 어두운 구분선 */
+    color: white;
+    font-weight: bold;
+}
+
+/* 메인 복구 버튼 */
+.btn-restore-main {
+    background-color: #28a745 !important;
+    color: white !important;
+    border: none;
+    /* 호버 시 부드러운 밝기 변화를 위한 트랜지션 */
+    transition: filter 0.2s;
+}
+
+.btn-restore-main:hover {
+    filter: brightness(1.1); /* 사용자 상호작용에 대한 즉각적 피드백 */
+}
+
+/* ---------------------------------------------------------
+ * SECTION 2: Left Sidebar (Snapshot File Tree)
+ * 기능: 파일 트리 영역
+ * --------------------------------------------------------- */
+.history-mode .sidebar {
+    width: 250px; /* 에디터 사이드바와 동일 너비로 시각적 안정성 제공 */
+    background-color: #2c313a !important; /* 히스토리 모드 전용 다크 배경 */
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+}
+
+.history-mode .tree-item {
+    padding: 8px 15px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: #abb2bf;
+    transition: all 0.2s;
+}
+
+.history-mode .tree-item:hover {
+    background-color: #3e4451; /* 호버 시 가독성 향상을 위한 배경 대비 */
+    color: white;
+}
+
+/* 활성 아이템: 현재 뷰어에 출력 중인 파일을 동국대 컬러(DGU Orange)로 강조 */
+.history-mode .tree-item.active {
+    background-color: var(--dgu-orange) !important;
+    color: white !important;
+    font-weight: bold;
+}
+
+/* ---------------------------------------------------------
+ * SECTION 3: Central Editor Area (Read-Only)
+ * 기능: 과거 소스 코드 조회 전용 영역
+ * --------------------------------------------------------- */
+.history-mode .editor-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    background-color: #ffffff; /* 코드 가독성을 위한 순백색 배경 */
+}
+
+/* ---------------------------------------------------------
+ * SECTION 4: Right History List (Revision List)
+ * 기능: 버전 타임라인 리스트 및 상세 제어(Download/Rollback) 메뉴 관리 영역
+ * --------------------------------------------------------- */
+.history-list-side {
+    width: 400px; /* 상세 정보 노출을 위한 최적화된 너비 */
+    background-color: #f3f5f8;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    /* 에디터 영역과의 경계를 구분하는 은은한 그림자 */
+    box-shadow: -4px 0 10px rgba(0,0,0,0.05);
+}
+
+.history-items-container {
+    flex: 1;
+    overflow-y: auto; /* 타임라인 초과 시 개별 스크롤 활성화 */
+}
+
+/* 개별 히스토리 항목: 선택 여부에 따른 시각적 상태 변화 정의 */
+.history-item {
+    cursor: pointer;
+    border-left: 6px solid transparent; /* 선택 바(Bar)를 위한 예비 공간 */
+    transition: all 0.2s ease;
+    background-color: #f8f9fa;
+}
+
+/* 선택된 버전: 좌측 보더에 브랜드 컬러를 적용하여 현재 선택 지점 명시 */
+.history-item.selected {
+    background-color: #ffffff;
+    border-left-color: var(--dgu-orange);
+}
+
+/* 컨텍스트 메뉴(점 3개) 및 드롭다운 시스템 */
+.history-menu-container {
+    position: relative;
+}
+
+.menu-trigger-btn {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #6c757d;
+}
+
+.history-dropdown {
+    position: absolute;
+    right: 0;
+    top: 35px;
+    background: white;
+    z-index: 1000;
+    width: 200px;
+    border-radius: 6px;
+    padding: 6px 0;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    border: 1px solid #dee2e6;
+}
+
+.history-dropdown .dropdown-item {
+    padding: 10px 15px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    color: #212529;
+}
+
+/* 드롭다운 내 롤백 메뉴 */
+.dropdown-item-restore {
+    color: #28a745 !important;
+    font-weight: bold;
+}
+
+.dropdown-item-restore:hover {
+    background-color: #eafaf1 !important;
+}
+
+/* 사용자 식별 아바타: 동국대 상징색 활용 */
+.user-avatar-rect {
+    width: 14px;
+    height: 14px;
+    background-color: var(--dgu-orange);
+    border-radius: 2px;
+}
+
+/* ---------------------------------------------------------
+ * SECTION 4-1: History Changed Entry List
+ * 기능:
+ * - Overleaf 스타일로 변경 라벨과 파일명을 세로 표시
+ * - changedEntries 배열을 그대로 렌더링하기 위한 스타일
+ * --------------------------------------------------------- */
+
+.history-entry-change {
+    margin-bottom: 6px;
+}
+
+.history-entry-label {
+    font-size: 0.8rem;
+    color: #6c757d;
+    line-height: 1.1;
+}
+
+.history-entry-name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #212529;
+    line-height: 1.25;
+    word-break: break-word;
+}
+
+/* ---------------------------------------------------------
+ * SECTION 5: Hover Animation Effects
+ * 기능: 에디터 화면 버튼과 동일한 약한 Hover Motion 적용
+ * --------------------------------------------------------- */
+
+.btn-restore-main {
+    transition:
+        background-color 0.18s ease-in-out,
+        border-color 0.18s ease-in-out,
+        color 0.18s ease-in-out,
+        transform 0.18s ease-in-out,
+        filter 0.18s ease-in-out;
+}
+
+.btn-restore-main:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.05);
+    box-shadow: none;
+}
+
+.history-dropdown .dropdown-item-restore {
+    transition:
+        background-color 0.15s ease,
+        color 0.15s ease;
+}
+
+.history-dropdown .dropdown-item-restore:hover {
+    transform: none;
+}
+
+/* ---------------------------------------------------------
+ * SECTION 6: History Tree Change Labels
+ * 기능:
+ * - 히스토리 파일 트리 내 변경 상태 라벨 표시
+ * - added / edited / renamed / removed 상태별 색상 구분
+ * --------------------------------------------------------- */
+
+.history-tree-label {
+    margin-left: 6px;
+    padding: 1px 6px;
+    border-radius: 0.2rem;
+    font-size: 0.68rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+/* ADDED: 파란색 */
+.history-tree-label-added,
+.history-tree-label-created {
+    background-color: #e7f1ff;
+    color: #0d6efd;
+    border: 1px solid #b6d4fe;
+}
+
+/* EDITED: 초록색 */
+.history-tree-label-edited {
+    background-color: #eaf7ef;
+    color: #198754;
+    border: 1px solid #b7dfc8;
+}
+
+/* RENAMED: 보라색 */
+.history-tree-label-renamed {
+    background-color: #f1e9ff;
+    color: #6f42c1;
+    border: 1px solid #d6c2ff;
+}
+
+/* REMOVED: 빨간색 */
+.history-tree-label-removed,
+.history-tree-label-deleted {
+    background-color: #fdecec;
+    color: #dc3545;
+    border: 1px solid #f5b5bd;
+}
+
+/* ---------------------------------------------------------
+ * SECTION 7: History Inline Diff Viewer
+ * 기능: edited 파일에서 Overleaf처럼 글자 단위 변경만 강조
+ * --------------------------------------------------------- */
+
+.history-editor-body {
+    min-height: 0;
+    overflow: hidden;
+}
+
+.history-inline-code-viewer {
+    height: 100%;
+    overflow: auto;
+    background-color: #ffffff;
+    color: #111827;
+    font-family: Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 14px;
+    line-height: 1.55;
+}
+
+.history-inline-code-row {
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr);
+    min-height: 22px;
+    border-left: 3px solid transparent;
+}
+
+.history-inline-code-row:hover {
+    background-color: #f7f8fa;
+}
+
+.history-inline-code-gutter {
+    padding-right: 10px;
+    border-right: 1px solid #d7dbe2;
+    color: #6b7280;
+    text-align: right;
+    user-select: none;
+}
+
+.history-inline-code-line {
+    margin: 0;
+    padding: 0 12px;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font: inherit;
+}
+
+.history-inline-added {
+    background-color: rgba(25, 135, 84, 0.2);
+}
+
+.history-inline-removed {
+    color: #198754;
+    text-decoration: line-through;
+    text-decoration-color: #198754;
+    text-decoration-thickness: 1.5px;
+}
+
+.history-inline-code-row-removed .history-inline-code-line {
+    opacity: 0.9;
+}
+
+/* ---------------------------------------------------------
+ * SECTION 8: History Tree Folder Toggle
+ * 기능: 히스토리 파일 트리 폴더 접기/펼치기 아이콘 정렬
+ * --------------------------------------------------------- */
+
+.history-tree-toggle {
+    display: inline-block;
+    width: 14px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+/* ---------------------------------------------------------
+ * SECTION 9: History Rollback Modal
+ * 기능:
+ * - 파일/프로젝트 롤백 확인 모달 가독성 개선
+ * --------------------------------------------------------- */
+
+.history-rollback-modal-box {
+    width: 520px;
+    max-width: calc(100vw - 40px);
+}
+
+.history-rollback-message {
+    line-height: 1.65;
+    word-break: keep-all;
+}
+
+/* ---------------------------------------------------------
+ * SECTION 10: Removed File Code View Style
+ * 기능: 삭제된 파일 조회 시 코드 영역 전체 강조 (연한 빨강 배경 + 취소선)
+ * --------------------------------------------------------- */
+
+.history-code-removed-viewer {
+    position: relative;
+}
+
+.history-code-removed-viewer .view-line {
+    /* 라인 전체 배경은 투명하게 유지하여 전체가 빨갛게 변하는 현상 방지 */
+    background-color: transparent !important;
+}
+
+/* Monaco 에디터 내 실제 텍스트 토큰(span)들을 직접 타겟팅 */
+.history-code-removed-viewer .view-line span {
+    background-color: #fff1f0 !important; /* 글자가 있는 영역만 배경색 적용 */
+    text-decoration: line-through !important; /* 글자 가운데 취소선 강제 적용 */
+    color: #000000 !important; /* 글자와 취소선을 검정색으로 설정 */
+}

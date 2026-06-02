@@ -1,0 +1,42 @@
+/**
+ * =================================================================
+ * [Style] Common Styles
+ * 설명: Common 화면의 레이아웃, 색상, 반응형 스타일을 정의함
+ * =================================================================
+ */
+:root {
+    --dgu-orange: #f15a24;  /* 동국대학교 상징색 */
+    --nav-height: 60px;      /* 네비바 높이를 60px로 통일 및 고정 */
+    --nav-bg: #222;          /* 네비게이션 배경 (다크) */
+}
+
+/* 모든 페이지의 상단 바 규격 통일 */
+.top-nav-fixed {
+    height: var(--nav-height) !important;
+    background-color: var(--nav-bg) !important;
+    display: flex;
+    align-items: center;
+    padding: 0 1.5rem !important;
+    border-bottom: 2px solid var(--dgu-orange);
+    flex-shrink: 0;
+    z-index: 1100; /* 최상단 유지 */
+}
+
+/* 브랜드 텍스트 및 로고 컬러 */
+.text-dgu {
+    color: var(--dgu-orange) !important;
+}
+
+/* 네비게이션 버튼 텍스트 호버 효과 */
+.nav-back-btn span:hover {
+    color: var(--dgu-orange) !important;
+}
+
+/* 모달 및 기타 공통 스타일은 기존 유지 */
+.custom-modal-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 2000;
+}

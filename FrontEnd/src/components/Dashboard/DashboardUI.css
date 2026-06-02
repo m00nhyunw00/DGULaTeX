@@ -1,0 +1,538 @@
+/**
+ * =================================================================
+ * [Style] Dashboard UI Styles
+ * 설명: Dashboard UI 화면의 레이아웃, 색상, 반응형 스타일을 정의함
+ * =================================================================
+ */
+/* ---------------------------------------------------------
+ * SECTION 0: Root Layout & Wrapper
+ * --------------------------------------------------------- */
+.project-dashboard {
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+    background-color: #f8f9fa;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.dashboard-wrapper {
+    display: flex;
+    flex: 1;
+    /* 상단 네비게이션 높이를 제외한 나머지 영역 */
+    height: calc(100vh - 56px); 
+    overflow: hidden;
+}
+
+/* ---------------------------------------------------------
+ * SECTION 1: Sidebar Navigation (Left)
+ * --------------------------------------------------------- */
+.dashboard-sidebar {
+    width: 260px;
+    background-color: #ffffff;
+    border-right: 1px solid #dee2e6;
+    padding: 4rem 1.5rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+}
+
+/* 신규 프로젝트 생성 버튼 (동국대 그린 포인트) */
+.btn-create-project {
+    background-color: #28a745;
+    color: white;
+    font-weight: 700;
+    border: none;
+    padding: 0.75rem;
+    border-radius: 6px;
+    margin-bottom: 2rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);
+}
+
+.btn-create-project:hover {
+    background-color: #218838;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+}
+
+.btn-create-project:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+}
+
+.sidebar-menu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar-menu li {
+    padding: 0.8rem 1.2rem;
+    cursor: pointer;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    color: #495057;
+    margin-bottom: 0.25rem;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+}
+
+.sidebar-menu li:hover {
+    background-color: #f1f3f5;
+    color: #212529;
+}
+
+.sidebar-menu li.active {
+    background-color: rgba(241, 90, 36, 0.1); /* 동국 오렌지 연하게 */
+    color: #f15a24; /* dgu-orange */
+    font-weight: 700;
+}
+
+/* ---------------------------------------------------------
+ * SECTION 1-1: Join Project Button
+ * 설명: 대시보드 사이드바의 프로젝트 참가 버튼
+ * --------------------------------------------------------- */
+.btn-join-project {
+    background-color: #ffffff;
+    color: #0d6efd;
+
+    font-weight: 700;
+
+    border: 1px solid #0d6efd;
+
+    padding: 0.72rem;
+
+    border-radius: 6px;
+
+    margin-top: -1rem;
+    margin-bottom: 2rem;
+
+    cursor: pointer;
+
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.btn-join-project:hover {
+    background-color: #0d6efd;
+    color: #ffffff;
+
+    transform: translateY(-1px);
+
+    box-shadow: 0 4px 8px rgba(13, 110, 253, 0.22);
+}
+
+.btn-join-project:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+
+.dashboard-withdrawal-area {
+    margin-top: auto;
+    padding-top: 1.5rem;
+}
+
+.dashboard-withdrawal-button {
+    border: 0;
+    background: transparent;
+    color: #adb5bd;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.dashboard-withdrawal-button:hover,
+.dashboard-withdrawal-button:focus-visible {
+    color: #dc3545;
+}
+
+.withdrawal-modal-box {
+    width: 480px;
+    max-width: calc(100vw - 36px);
+    background: #ffffff;
+    border: 1px solid #dee2e6;
+    border-radius: 10px;
+    padding: 28px;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.18);
+}
+
+.withdrawal-modal-title {
+    margin: 0 0 10px;
+    color: #212529;
+    font-size: 1.12rem;
+    font-weight: 800;
+}
+
+.withdrawal-modal-desc {
+    margin: 0 0 18px;
+    color: #6c757d;
+    font-size: 0.88rem;
+    line-height: 1.55;
+}
+
+.withdrawal-code-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+    padding: 0.75rem 0.9rem;
+    border: 1px solid rgba(220, 53, 69, 0.22);
+    border-radius: 8px;
+    background: rgba(220, 53, 69, 0.06);
+    color: #6c757d;
+    font-size: 0.82rem;
+}
+
+.withdrawal-code-box strong {
+    color: #dc3545;
+    font-size: 1rem;
+    letter-spacing: 0.12em;
+}
+
+.withdrawal-input-area {
+    text-align: left;
+}
+
+.withdrawal-label {
+    display: block;
+    margin: 0 0 6px;
+    color: #495057;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.withdrawal-input {
+    margin-bottom: 12px;
+    border-radius: 0.2rem;
+    font-size: 0.88rem;
+    padding: 0.62rem 0.75rem;
+}
+
+.withdrawal-input:focus {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.15rem rgba(220, 53, 69, 0.16);
+}
+
+.withdrawal-code-input {
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.withdrawal-message {
+    margin: 4px 0 18px;
+    color: #dc3545;
+    font-size: 0.82rem;
+    font-weight: 700;
+    line-height: 1.45;
+}
+
+.withdrawal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.withdrawal-actions .btn {
+    border-radius: 0.2rem !important;
+    font-weight: 700;
+}
+
+/* ---------------------------------------------------------
+ * SECTION 2: Main Content & Table (Right)
+ * --------------------------------------------------------- */
+.dashboard-main {
+    flex: 1;
+    padding: 2.5rem;
+    overflow-y: auto;
+    background-color: #ffffff;
+}
+
+/* 상단 배치 작업 바 (다중 선택 시 등장) */
+.top-batch-actions {
+    display: flex;
+    gap: 0.5rem;
+    background: #f8f9fa;
+    padding: 0.5rem;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.dashboard-main .table-container {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e9ecef;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    overflow: hidden;
+    margin-top: 1rem;
+}
+
+/* ---------------------------------------------------------
+ * SECTION 3: Interactive Table Rows (Core Logic)
+ * --------------------------------------------------------- */
+
+/* [중요] 테이블 행 전체에 손 모양 커서 적용 */
+.table-container tbody tr {
+    cursor: pointer; /* 마우스 포인터 손 모양 */
+    transition: background-color 0.15s ease-in-out;
+}
+
+/* 행 호버 시 하이라이트 (동국 오렌지 테마) */
+.table-hover tbody tr:hover {
+    background-color: rgba(241, 90, 36, 0.05) !important;
+}
+
+/* 체크박스 선택된 행 스타일 */
+.table-row-selected {
+    background-color: rgba(241, 90, 36, 0.08) !important;
+}
+
+.table thead th {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6c757d;
+    padding: 1rem;
+    border-top: none;
+}
+
+.table tbody td {
+    padding: 1.1rem 1rem;
+    vertical-align: middle;
+    font-size: 0.95rem;
+    border-bottom: 1px solid #f1f3f5;
+}
+
+/* ---------------------------------------------------------
+ * SECTION 4: Row Action Buttons
+ * --------------------------------------------------------- */
+.row-action-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+/* 버튼 크기 최적화 (Extra Small) */
+.btn-xs {
+    padding: 0.25rem 0.6rem;
+    font-size: 0.75rem;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* ---------------------------------------------------------
+ * SECTION 5: Modals & Overlays
+ * --------------------------------------------------------- */
+.custom-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(33, 37, 41, 0.6);
+    backdrop-filter: blur(2px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.modal-content-box {
+    width: 420px;
+    background: white;
+    border-radius: 16px;
+    padding: 2.5rem;
+    text-align: center;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    border: none;
+}
+
+.modal-content-box h5 {
+    font-weight: 800;
+    margin-bottom: 1rem;
+}
+
+/* 애니메이션 효과 (입장 시 줌인) */
+.animate__zoomIn {
+    animation: zoomIn 0.25s ease-out;
+}
+
+@keyframes zoomIn {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+/* ---------------------------------------------------------
+ * SECTION 5-1: Join Project Modal
+ * 설명: 초대 코드/링크 입력 후 참가 요청을 보내는 모달
+ * --------------------------------------------------------- */
+.join-project-modal-box {
+    width: 480px;
+    max-width: calc(100vw - 36px);
+
+    background: #ffffff;
+
+    border: 1px solid #dee2e6;
+    border-radius: 10px;
+
+    padding: 28px;
+
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.18);
+}
+
+.join-project-title {
+    margin: 0 0 10px;
+
+    font-size: 1.12rem;
+    font-weight: 800;
+
+    color: #212529;
+}
+
+.join-project-desc {
+    margin: 0 0 20px;
+
+    color: #6c757d;
+
+    font-size: 0.88rem;
+    line-height: 1.55;
+}
+
+.join-project-input-area {
+    margin-bottom: 22px;
+
+    text-align: left;
+}
+
+.join-project-label {
+    display: block;
+
+    margin-bottom: 8px;
+
+    color: #495057;
+
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+.join-project-input {
+    font-size: 0.88rem;
+
+    border-radius: 0.2rem;
+
+    padding: 0.62rem 0.75rem;
+}
+
+.join-project-input:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.15rem rgba(13, 110, 253, 0.18);
+}
+
+.join-project-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.join-project-actions .btn {
+    border-radius: 0.2rem !important;
+    font-weight: 700;
+}
+
+/* ---------------------------------------------------------
+ * SECTION 5-2: Create Project Modal
+ * 설명: 신규 프로젝트 이름 입력 모달
+ * --------------------------------------------------------- */
+.create-project-modal-box {
+    width: 460px;
+    max-width: calc(100vw - 36px);
+
+    background: #ffffff;
+
+    border: 1px solid #dee2e6;
+    border-radius: 10px;
+
+    padding: 28px;
+
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.18);
+}
+
+.create-project-title {
+    margin: 0 0 10px;
+
+    font-size: 1.12rem;
+    font-weight: 800;
+
+    color: #212529;
+}
+
+.create-project-desc {
+    margin: 0 0 20px;
+
+    color: #6c757d;
+
+    font-size: 0.88rem;
+    line-height: 1.55;
+}
+
+.create-project-input-area {
+    margin-bottom: 22px;
+
+    text-align: left;
+}
+
+.create-project-label {
+    display: block;
+
+    margin-bottom: 8px;
+
+    color: #495057;
+
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+.create-project-input {
+    font-size: 0.88rem;
+
+    border-radius: 0.2rem;
+
+    padding: 0.62rem 0.75rem;
+}
+
+.create-project-input:focus {
+    border-color: #28a745;
+    box-shadow: 0 0 0 0.15rem rgba(40, 167, 69, 0.18);
+}
+
+.create-project-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.create-project-actions .btn {
+    border-radius: 0.2rem !important;
+    font-weight: 700;
+}
+
+/* ---------------------------------------------------------
+ * SECTION 6: Utility Classes
+ * --------------------------------------------------------- */
+.text-dgu {
+    color: #f15a24 !important; /* dgu-orange */
+}
+
+.bg-light {
+    background-color: #f8f9fa !important;
+}

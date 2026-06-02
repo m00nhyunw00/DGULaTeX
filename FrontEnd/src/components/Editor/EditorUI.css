@@ -1,0 +1,2283 @@
+/**
+ * =================================================================
+ * [Style] Editor UI Styles
+ * 설명: Editor UI 화면의 레이아웃, 색상, 반응형 스타일을 정의함
+ * =================================================================
+ */
+/* 동국대학교 공식 색상 및 전역 변수 */
+:root {
+    --dgu-orange: #EE7916;
+    --dgu-orange-light: rgba(238, 121, 22, 0.15);
+    --nav-height: 56px;
+}
+
+/* ---------------------------------------------------------
+ * SECTION 0: Root Layout & Main Framework
+ * --------------------------------------------------------- */
+.full-layout {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+}
+
+.main-content {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    height: calc(100vh - var(--nav-height));
+}
+
+/* ---------------------------------------------------------
+ * SECTION 1: Top Navigation Bar (Dashboard Unified)
+ * --------------------------------------------------------- */
+.nav-back-btn {
+    padding: 0;
+    margin-right: 0.5rem;
+}
+
+.nav-arrow {
+    color: white;
+    font-weight: bold;
+    font-size: 1.5rem;
+    line-height: 1;
+    display: inline-block;
+    transition: transform 0.2s;
+}
+
+.nav-back-btn:hover .nav-arrow {
+    color: var(--dgu-orange) !important;
+    transform: scale(1.1);
+}
+
+.project-title-divider {
+    margin-left: 0.5rem;
+    padding-left: 1rem;
+    border-left: 1px solid #444;
+    color: white;
+    font-weight: bold;
+}
+
+.btn-history-custom {
+    background-color: #3e4451;
+    color: #ffffff !important;
+    border: 1px solid #555;
+    transition: all 0.2s;
+}
+
+.btn-history-custom:hover {
+    background-color: #4e5565;
+    border-color: var(--dgu-orange);
+    color: var(--dgu-orange) !important;
+}
+
+.btn-outline-light {
+    border: 1px solid rgba(255, 255, 255, 0.5) !important;
+    color: white !important;
+    padding: 0.25rem 0.5rem !important;
+    font-size: 0.875rem !important;
+    line-height: 1.5 !important;
+    border-radius: 0.2rem !important;
+    transition: all 0.2s ease-in-out;
+}
+
+.btn-outline-light:hover {
+    background-color: white !important;
+    color: var(--dgu-orange) !important;
+    border-color: white !important;
+}
+
+/* 기존 네비 버튼 hover motion 통일 */
+.btn-history-custom,
+.btn-outline-light {
+    transition:
+        background-color 0.18s ease-in-out,
+        border-color 0.18s ease-in-out,
+        color 0.18s ease-in-out,
+        transform 0.18s ease-in-out;
+}
+
+.btn-history-custom:hover,
+.btn-outline-light:hover {
+    transform: translateY(-1px);
+}
+
+/* ---------------------------------------------------------
+ * SECTION 2: Left Sidebar (File Tree)
+ * --------------------------------------------------------- */
+/* .sidebar {
+    width: 250px;
+    background-color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    border: 2px solid #dee2e6; 
+    transition: border-color 0.2s, box-shadow 0.2s;
+    box-sizing: border-box;
+} */
+
+.sidebar {
+    width: 100%;
+    height: 100%;
+    background-color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    border: 2px solid #dee2e6; 
+    transition: border-color 0.2s, box-shadow 0.2s;
+    box-sizing: border-box;
+}
+
+.sidebar.drag-over-root {
+    border: 2px solid var(--dgu-orange) !important;
+    box-shadow: 0 0 8px var(--dgu-orange-light); 
+}
+
+.file-tree-header {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 14px;
+    min-height: 42px;
+    white-space: nowrap;
+}
+
+.file-tree-title {
+    padding-left: 4px;
+    flex: 0 0 auto;
+}
+
+.file-tree-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex: 0 0 auto;
+}
+
+.file-tree-action-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    font-size: 1.15rem;
+    line-height: 1;
+}
+
+.file-tree-action-btn:hover {
+    background: rgba(238, 121, 22, 0.12);
+}
+
+.file-tree-action-plus {
+    position: absolute;
+    top: 0;
+    right: -2px;
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: #444;
+    line-height: 1;
+}
+
+.file-tree-container {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.tree-item {
+    padding: 8px 15px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    color: #495057;
+    border: 2px solid transparent; 
+    transition: background-color 0.1s;
+}
+
+.tree-item:hover {
+    background-color: #fff1eb;
+    color: var(--dgu-orange);
+}
+
+.tree-item.active {
+    background-color: var(--dgu-orange) !important;
+    color: white !important;
+    font-weight: bold;
+}
+
+.tree-item.selected {
+    background-color: var(--dgu-orange-light) !important;
+    border-left: 3px solid var(--dgu-orange);
+    color: var(--dgu-orange) !important;
+}
+
+.tree-item.drag-over {
+    background-color: var(--dgu-orange-light) !important;
+    border: 2px dashed var(--dgu-orange) !important;
+    color: var(--dgu-orange) !important;
+    border-radius: 4px;
+}
+
+/* ---------------------------------------------------------
+ * SECTION 3: Central Editor Section
+ * --------------------------------------------------------- */
+/* .editor-section {
+    flex: 1.5;
+    display: flex;
+    flex-direction: column;
+    background-color: #ffffff !important;
+    min-width: 0;
+} */
+
+.editor-section {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background-color: #ffffff !important;
+    min-width: 0;
+}
+
+.editor-toolbar {
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    padding: 4px 8px;
+    background-color: #f8f9fa;
+}
+
+.latex-editor-toolbar {
+    height: 42px;
+    min-height: 42px;
+    max-height: 42px;
+    gap: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    background: #20252d;
+    border-color: #343b46 !important;
+    scrollbar-width: thin;
+}
+
+.latex-toolbar-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding-right: 8px;
+    border-right: 1px solid #3b4350;
+}
+
+.latex-toolbar-group:last-child {
+    border-right: 0;
+    padding-right: 0;
+}
+
+.latex-toolbar-button,
+.latex-toolbar-select {
+    height: 30px;
+    min-width: 30px;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: #d8dde5;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.latex-toolbar-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 8px;
+}
+
+.latex-toolbar-button:hover:not(:disabled),
+.latex-toolbar-select:hover:not(:disabled) {
+    background: #333b47;
+    color: #ffffff;
+}
+
+.latex-toolbar-button:disabled,
+.latex-toolbar-select:disabled {
+    color: #747c88;
+    cursor: not-allowed;
+}
+
+.latex-toolbar-bold {
+    font-size: 20px;
+}
+
+.latex-toolbar-italic {
+    font-size: 20px;
+    font-style: italic;
+}
+
+.latex-toolbar-select-wrap {
+    position: relative;
+    display: inline-flex;
+}
+
+.latex-toolbar-select {
+    width: 42px;
+    padding: 0 4px;
+    appearance: none;
+    text-align: center;
+    cursor: pointer;
+}
+
+.latex-toolbar-wide-select {
+    width: 58px;
+}
+
+.latex-toolbar-button[data-tooltip],
+.latex-toolbar-select-wrap[data-tooltip] {
+    position: relative;
+}
+
+.latex-toolbar-button[data-tooltip]::after,
+.latex-toolbar-select-wrap[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 50%;
+    top: calc(100% + 8px);
+    transform: translateX(-50%);
+    z-index: 50;
+    width: max-content;
+    max-width: 180px;
+    padding: 5px 8px;
+    border-radius: 4px;
+    background: #111827;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.2;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 80ms ease, transform 80ms ease;
+}
+
+.latex-toolbar-button[data-tooltip]::before,
+.latex-toolbar-select-wrap[data-tooltip]::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: calc(100% + 3px);
+    transform: translateX(-50%);
+    z-index: 51;
+    border: 5px solid transparent;
+    border-bottom-color: #111827;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 80ms ease;
+}
+
+.latex-toolbar-button[data-tooltip]:hover::after,
+.latex-toolbar-button[data-tooltip]:hover::before,
+.latex-toolbar-select-wrap[data-tooltip]:hover::after,
+.latex-toolbar-select-wrap[data-tooltip]:hover::before {
+    opacity: 1;
+}
+
+.latex-toolbar-button[data-tooltip]:hover::after,
+.latex-toolbar-select-wrap[data-tooltip]:hover::after {
+    transform: translateX(-50%) translateY(1px);
+}
+
+.latex-toolbar-select option {
+    color: #1f2933;
+    background: #ffffff;
+}
+
+.editor-wrapper-inner {
+    flex: 1;
+    min-height: 0;
+    background-color: #ffffff;
+}
+
+/* ---------------------------------------------------------
+ * SECTION 3-1: Image Viewer Section
+ * 설명: 이미지 파일 선택 시 Monaco 대신 표시되는 이미지 뷰어
+ * --------------------------------------------------------- */
+.image-viewer-wrapper {
+    flex: 1;
+    min-height: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background-color: #f8f9fa;
+
+    overflow: auto;
+}
+
+.image-viewer-canvas {
+    width: 100%;
+    height: 100%;
+
+    padding: 24px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.image-viewer-img {
+    max-width: 100%;
+    max-height: 100%;
+
+    object-fit: contain;
+
+    background-color: #ffffff;
+
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+}
+
+.image-viewer-placeholder {
+    width: 100%;
+    height: 100%;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    color: #6c757d;
+    text-align: center;
+}
+
+.image-viewer-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.65;
+}
+
+.image-viewer-title {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #343a40;
+    margin-bottom: 0.5rem;
+}
+
+.image-viewer-desc {
+    font-size: 0.88rem;
+    line-height: 1.55;
+    color: #868e96;
+}
+
+/* ---------------------------------------------------------
+ * SECTION 4: Right Preview & PDF Navigation
+ * 설명:
+ * - 우측 PDF 프리뷰 영역 기본 레이아웃
+ * - 컴파일 로그 / PDF.js 렌더러 / 로딩 오버레이 포함
+ * --------------------------------------------------------- */
+.preview-section {
+    container-type: inline-size;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+
+    background-color: #f3f5f8;
+}
+
+.pdf-viewer-container {
+    position: relative;
+
+    flex: 1;
+    min-height: 0;
+
+    overflow: hidden;
+
+    background-color: #525659;
+}
+
+
+/* ---------------------------------------------------------
+ * SECTION 4-1: PDF.js Preview Renderer
+ * 설명:
+ * - iframe 대신 PDF.js canvas 기반 렌더링
+ * - 프리뷰 영역 너비 변화 감지 후 PDF를 다시 렌더링
+ * - devicePixelRatio 기반 고해상도 canvas 렌더링
+ * - textLayer를 얹어 PDF 텍스트 선택/복사 지원
+ * --------------------------------------------------------- */
+.pdf-js-layer {
+    position: absolute;
+    inset: 0;
+
+    width: 100%;
+    height: 100%;
+}
+
+.pdf-js-layer.active {
+    display: block;
+}
+
+.pdf-js-layer.hidden {
+    display: none;
+}
+
+.pdf-js-scroll-viewer {
+    width: 100%;
+    height: 100%;
+
+    overflow: auto;
+
+    background-color: #525659;
+
+    padding: 18px 0;
+    --pdf-zoom: 1;
+}
+
+.pdf-js-page-wrapper {
+    --page-width: 0px;
+    --page-height: 0px;
+
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+
+    width: max(100%, calc(var(--page-width) * var(--pdf-zoom)));
+    height: calc(var(--page-height) * var(--pdf-zoom));
+
+    margin-bottom: calc(14px * var(--pdf-zoom));
+}
+
+.pdf-js-page-inner {
+    position: relative;
+
+    flex: 0 0 auto;
+
+    background-color: #ffffff;
+
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+
+    transform: scale(var(--pdf-zoom));
+    transform-origin: top center;
+}
+
+.pdf-js-page-canvas {
+    display: block;
+
+    background-color: #ffffff;
+
+    image-rendering: auto;
+}
+
+.pdf-js-text-layer,
+.textLayer {
+    --min-font-size: 1;
+    --text-scale-factor: calc(var(--total-scale-factor, 1) * var(--min-font-size));
+    --min-font-size-inv: calc(1 / var(--min-font-size));
+
+    position: absolute;
+    inset: 0;
+
+    overflow: hidden;
+    opacity: 1;
+    line-height: 1;
+    text-align: initial;
+    text-size-adjust: none;
+    forced-color-adjust: none;
+    transform-origin: 0 0;
+    z-index: 2;
+}
+
+.pdf-js-text-layer :is(span, br),
+.textLayer :is(span, br) {
+    color: transparent;
+    position: absolute;
+    white-space: pre;
+    cursor: text;
+    transform-origin: 0% 0%;
+}
+
+.pdf-js-text-layer > :not(.markedContent),
+.pdf-js-text-layer .markedContent span:not(.markedContent),
+.textLayer > :not(.markedContent),
+.textLayer .markedContent span:not(.markedContent) {
+    z-index: 1;
+    --font-height: 0;
+    font-size: calc(var(--text-scale-factor) * var(--font-height));
+    --scale-x: 1;
+    --rotate: 0deg;
+    transform: rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv));
+}
+
+.pdf-js-text-layer .markedContent,
+.textLayer .markedContent {
+    display: contents;
+}
+
+.pdf-js-text-layer .endOfContent,
+.textLayer .endOfContent {
+    display: block;
+    position: absolute;
+    inset: 100% 0 0;
+    z-index: 0;
+    cursor: default;
+    user-select: none;
+}
+
+.pdf-js-text-layer ::selection,
+.textLayer ::selection {
+    background: rgba(0, 102, 204, 0.28);
+}
+
+.pdf-js-hidden-renderer {
+    position: absolute;
+    inset: 0;
+
+    width: 100%;
+    height: 100%;
+
+    overflow: hidden;
+
+    opacity: 0;
+    pointer-events: none;
+
+    z-index: -1;
+}
+
+.pdf-js-error-box {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+
+    transform: translate(-50%, -50%);
+
+    background-color: #ffffff;
+    color: #dc3545;
+
+    border: 1px solid #dc3545;
+    border-radius: 6px;
+
+    padding: 16px 20px;
+
+    font-size: 0.9rem;
+    font-weight: 700;
+
+    z-index: 30;
+}
+
+/* ---------------------------------------------------------
+ * SECTION 4-2: PDF Compile / Render Overlay
+ * 설명:
+ * - 컴파일 중 또는 PDF.js 렌더링 중 표시되는 작은 상태 배지
+ * --------------------------------------------------------- */
+.pdf-compile-overlay {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+
+    z-index: 40;
+
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 7px 10px;
+
+    background-color: rgba(33, 37, 41, 0.82);
+    color: #ffffff;
+
+    border-radius: 4px;
+
+    font-size: 0.8rem;
+    font-weight: 700;
+
+    pointer-events: none;
+}
+
+
+/* ---------------------------------------------------------
+ * SECTION 4-3: Legacy Page Navigation Overlay
+ * 설명:
+ * - 기존 iframe/page navigation 관련 스타일 유지용
+ * - 현재 PDF.js 방식에서는 사용하지 않아도 무해함
+ * --------------------------------------------------------- */
+.page-nav-overlay {
+    z-index: 1000;
+    opacity: 0.75;
+
+    transition: opacity 0.2s ease-in-out;
+}
+
+.page-nav-overlay:hover {
+    opacity: 1;
+}
+
+.page-nav-overlay .btn-dark {
+    width: 32px;
+    height: 32px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background-color: #212529;
+
+    border: none;
+}
+
+.page-nav-overlay .btn-dark:hover {
+    background-color: var(--dgu-orange);
+}
+
+
+/* ---------------------------------------------------------
+ * SECTION 5: Overleaf Style Context Menu
+ * --------------------------------------------------------- */
+.editor-context-menu {
+    position: fixed;
+    background: white;
+    min-width: 200px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 3000;
+    padding: 5px 0;
+    animation: fadeIn 0.1s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.98); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.menu-item {
+    padding: 8px 16px;
+    font-size: 0.85rem;
+    color: #333;
+    cursor: pointer;
+    transition: background 0.1s;
+}
+
+.menu-item:hover {
+    background-color: #f1f3f5;
+    color: var(--dgu-orange);
+}
+
+.menu-white {
+    height: 1px;
+    background-color: #eee;
+    margin: 4px 0;
+}
+
+.text-primary { color: #007bff !important; }
+.text-danger { color: #dc3545 !important; }
+
+/* ---------------------------------------------------------
+ * SECTION 6: AI Chat Overlay
+ * --------------------------------------------------------- */
+.ai-chat-fab-btn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background-color: #ffffff;
+    border: 1px solid #e2e2e2;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    z-index: 6000;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease-in-out;
+}
+
+.ai-chat-fab-btn:hover { transform: scale(1.1); }
+.ai-chat-fab-btn.btn-active { 
+    background-color: #333 !important; 
+    color: white !important; 
+}
+.fab-icon-symbol { font-size: 1.4rem; }
+
+.ai-chat-popup {
+    position: fixed;
+    top: clamp(64px, 8vh, 96px);
+    right: 20px;
+    min-width: min(360px, calc(100vw - 32px));
+    min-height: min(360px, calc(100vh - 120px));
+    max-width: calc(100vw - 40px);
+    max-height: calc(100vh - 120px);
+    background-color: #1a1a1a;
+    border-radius: 12px;
+    box-shadow: -10px 10px 40px rgba(0, 0, 0, 0.4);
+    z-index: 5500;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #333;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(calc(100% + 40px));
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
+}
+
+.ai-chat-overlay-wrapper.active .ai-chat-popup {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(0);
+}
+
+.ai-chat-resize-handle {
+    position: absolute;
+    left: -7px;
+    bottom: -7px;
+    width: 18px;
+    height: 18px;
+    border: 0;
+    border-radius: 4px 0 0 4px;
+    background: linear-gradient(135deg, transparent 0 42%, rgba(238, 121, 22, 0.95) 42% 52%, transparent 52% 64%, rgba(238, 121, 22, 0.95) 64% 74%, transparent 74%);
+    cursor: nesw-resize;
+    opacity: 0.8;
+}
+
+.ai-chat-resize-handle:hover,
+.ai-chat-resize-handle:focus-visible {
+    opacity: 1;
+}
+
+body.ai-chat-resizing {
+    cursor: nesw-resize !important;
+    user-select: none;
+}
+
+.ai-chat-header {
+    padding: 15px 20px;
+    border-bottom: 1px solid #333;
+    color: #fff;
+}
+.btn-close-chat-ui {
+    background: none; border: none; color: #888; font-size: 1.5rem; cursor: pointer;
+}
+
+.ai-chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.chat-bubble-wrapper {
+    display: flex;
+    width: 100%;
+}
+
+.chat-bubble-wrapper.user { justify-content: flex-end; }
+.chat-bubble-wrapper.assistant { justify-content: flex-start; }
+
+.chat-bubble {
+    max-width: 80%;
+    width: fit-content;
+    padding: 12px 18px;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    border-radius: 14px;
+    word-break: break-word;
+    white-space: pre-wrap;
+}
+
+.chat-bubble.user {
+    background-color: var(--dgu-orange);
+    color: #fff;
+    border-bottom-right-radius: 2px;
+}
+
+.chat-bubble.assistant {
+    background-color: #2b2b2b;
+    color: #efefef;
+    border-bottom-left-radius: 2px;
+    border: 1px solid #333;
+}
+
+.ai-chat-footer { padding: 15px; border-top: 1px solid #333; }
+.ai-chat-input-box {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    background: #252525;
+    border: 1px solid #444;
+    padding: 10px 14px;
+    border-radius: 8px;
+}
+.chat-input-element {
+    flex: 1;
+    min-height: 24px;
+    max-height: 110px;
+    background: none;
+    border: none;
+    color: #fff;
+    outline: none;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    resize: none;
+    overflow-y: auto;
+}
+.chat-input-element::placeholder { color: #9a9a9a; }
+.chat-submit-btn {
+    flex: 0 0 auto;
+    background: #444;
+    border: none;
+    color: #fff;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.chat-submit-btn:hover:not(:disabled) { background: var(--dgu-orange); }
+.chat-submit-btn:disabled { opacity: 0.4; }
+
+.loading-dots {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    min-width: 54px;
+    justify-content: center;
+}
+.loading-dots span {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background-color: #efefef;
+    opacity: 0.35;
+    animation: aiTypingBounce 1.05s infinite ease-in-out;
+}
+.loading-dots span:nth-child(2) { animation-delay: 0.15s; }
+.loading-dots span:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes aiTypingBounce {
+    0%, 80%, 100% {
+        transform: translateY(0);
+        opacity: 0.35;
+    }
+    40% {
+        transform: translateY(-5px);
+        opacity: 1;
+    }
+}
+
+/* ---------------------------------------------------------
+ * SECTION 7: PDF Preview Placeholder
+ * --------------------------------------------------------- */
+.no-pdf-placeholder {
+    width: 100%;
+    height: 100%;
+    background-color: #f8f9fa;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2rem;
+    color: #6c757d;
+}
+
+.placeholder-icon {
+    font-size: 4rem;
+    margin-bottom: 1.5rem;
+    filter: grayscale(1);
+    opacity: 0.5;
+}
+
+.placeholder-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #343a40;
+    margin-bottom: 0.75rem;
+}
+
+.placeholder-desc {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: #868e96;
+}
+
+.placeholder-desc b {
+    color: #007bff; 
+}
+
+/* ---------------------------------------------------------
+ * SECTION 8: Custom Modals & Inline Edits
+ * --------------------------------------------------------- */
+.custom-modal-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background-color: rgba(0, 0, 0, 0.45);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    backdrop-filter: blur(2px);
+}
+
+.modal-content-box {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 24px;
+    width: 360px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.inline-tree-input {
+    height: 24px;
+    font-size: 0.85rem;
+    padding: 2px 6px;
+    border: 1px solid var(--dgu-orange) !important;
+    border-radius: 3px;
+    margin-left: -6px; /* 텍스트와 시작 위치 맞춤 */
+}
+
+.inline-tree-input:focus {
+    box-shadow: 0 0 0 2px var(--dgu-orange-light) !important;
+}
+
+/* ---------------------------------------------------------
+ * SECTION 8-1: Compile Error Modal
+ * 설명:
+ * - 브라우저 기본 alert 대신 사용하는 컴파일 실패 커스텀 모달
+ * --------------------------------------------------------- */
+
+.compile-error-modal-box {
+    width: 460px;
+    max-width: calc(100vw - 40px);
+}
+
+.compile-error-message {
+    line-height: 1.6;
+    word-break: keep-all;
+    white-space: pre-wrap;
+}
+
+/* ---------------------------------------------------------
+ * SECTION 9: Compile Log View
+ * --------------------------------------------------------- */
+.compile-log-view {
+    width: 100%;
+    height: 100%;
+    background-color: #eef2f6;
+    display: flex;
+    flex-direction: column;
+}
+
+.compile-log-body {
+    flex: 1;
+    overflow: auto;
+    padding: 18px;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(241, 245, 249, 0.96));
+}
+
+.compile-log-panel {
+    max-width: 980px;
+    margin: 0 auto;
+    color: #1f2933;
+}
+
+.compile-log-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: stretch;
+    gap: 12px;
+    margin-bottom: 14px;
+    padding: 14px;
+    background-color: #ffffff;
+    border: 1px solid #d9e2ec;
+    border-left: 5px solid #6c757d;
+    border-radius: 8px;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+}
+
+.compile-log-panel.status-success .compile-log-summary {
+    border-left-color: #198754;
+}
+
+.compile-log-panel.status-failure .compile-log-summary {
+    border-left-color: #dc3545;
+}
+
+.compile-log-status-block {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.compile-log-status-dot {
+    width: 14px;
+    height: 14px;
+    flex: 0 0 14px;
+    border-radius: 50%;
+    background-color: #6c757d;
+    box-shadow: 0 0 0 4px rgba(108, 117, 125, 0.12);
+}
+
+.compile-log-panel.status-success .compile-log-status-dot {
+    background-color: #198754;
+    box-shadow: 0 0 0 4px rgba(25, 135, 84, 0.14);
+}
+
+.compile-log-panel.status-failure .compile-log-status-dot {
+    background-color: #dc3545;
+    box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.14);
+}
+
+.compile-log-status-title {
+    font-size: 1rem;
+    font-weight: 800;
+    color: #1f2933;
+}
+
+.compile-log-status-time {
+    margin-top: 2px;
+    font-size: 0.82rem;
+    color: #64748b;
+    word-break: keep-all;
+}
+
+.compile-log-meta-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+}
+
+.compile-log-meta-item {
+    min-width: 92px;
+    padding: 8px 10px;
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+}
+
+.compile-log-meta-item span {
+    display: block;
+    margin-bottom: 2px;
+    color: #64748b;
+    font-size: 0.68rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.compile-log-meta-item strong {
+    display: block;
+    color: #111827;
+    font-size: 0.86rem;
+    font-weight: 800;
+}
+
+.compile-log-section-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.compile-log-card {
+    overflow: hidden;
+    background-color: #ffffff;
+    border: 1px solid #d9e2ec;
+    border-radius: 8px;
+    box-shadow: 0 6px 14px rgba(15, 23, 42, 0.06);
+}
+
+.compile-log-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    background-color: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.compile-log-card-header h6 {
+    margin: 0;
+    color: #1f2933;
+    font-size: 0.84rem;
+    font-weight: 800;
+}
+
+.compile-log-card-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    flex: 0 0 22px;
+    border-radius: 50%;
+    background-color: #e2e8f0;
+    color: #334155;
+    font-size: 0.74rem;
+    font-weight: 900;
+}
+
+.compile-log-card.log-kind-result .compile-log-card-icon,
+.compile-log-card.log-kind-pass .compile-log-card-icon {
+    background-color: rgba(25, 135, 84, 0.12);
+    color: #198754;
+}
+
+.compile-log-card.log-kind-warnings .compile-log-card-icon {
+    background-color: rgba(255, 193, 7, 0.18);
+    color: #9a6a00;
+}
+
+.compile-log-card.log-kind-errors .compile-log-card-icon,
+.compile-log-card.log-kind-stderr .compile-log-card-icon {
+    background-color: rgba(220, 53, 69, 0.12);
+    color: #dc3545;
+}
+
+.compile-log-lines {
+    padding: 8px 0;
+}
+
+.compile-log-line {
+    padding: 4px 14px;
+    color: #334155;
+    font-family: Consolas, Monaco, 'Courier New', monospace;
+    font-size: 0.78rem;
+    line-height: 1.48;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.compile-log-line.is-success {
+    color: #146c43;
+    background-color: rgba(25, 135, 84, 0.06);
+    font-weight: 700;
+}
+
+.compile-log-line.is-warning {
+    color: #8a5a00;
+    background-color: rgba(255, 193, 7, 0.09);
+    font-weight: 700;
+}
+
+.compile-log-line.is-error {
+    color: #b02a37;
+    background-color: rgba(220, 53, 69, 0.07);
+    font-weight: 700;
+}
+
+.compile-log-line.is-location {
+    color: #0d6efd;
+    background-color: rgba(13, 110, 253, 0.06);
+}
+
+.compile-log-line.is-spacer {
+    height: 8px;
+    padding: 0;
+}
+
+.compile-log-raw-fallback {
+    margin: 0;
+    padding: 14px;
+    background-color: #ffffff;
+    border: 1px solid #d9e2ec;
+    border-radius: 8px;
+    color: #334155;
+    font-size: 0.78rem;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: Consolas, Monaco, 'Courier New', monospace;
+}
+
+.compile-log-empty {
+    width: 100%;
+    height: 100%;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    line-height: 1.6;
+    font-size: 0.9rem;
+}
+
+@container (max-width: 620px) {
+    .compile-log-summary {
+        flex-direction: column;
+    }
+
+    .compile-log-meta-grid {
+        justify-content: flex-start;
+    }
+}
+
+.preview-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-width: 0;
+    min-height: 56px;
+    padding: 8px 12px;
+    overflow: hidden;
+}
+
+.preview-toolbar-left,
+.preview-toolbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    white-space: nowrap;
+}
+
+.preview-toolbar-left {
+    flex: 0 0 auto;
+}
+
+.preview-toolbar-actions {
+    flex: 1 1 auto;
+    justify-content: flex-start;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+    padding-bottom: 2px;
+}
+
+.preview-action-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-width: 36px;
+    min-height: 34px;
+    white-space: nowrap;
+    flex: 0 0 auto;
+}
+
+.preview-btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    font-weight: 800;
+}
+
+.preview-btn-label {
+    display: inline-block;
+    white-space: nowrap;
+}
+
+.preview-auto-toggle {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    margin: 0;
+    padding-left: 2.5em;
+    white-space: nowrap;
+    flex: 0 0 auto;
+}
+
+.preview-auto-label {
+    margin-left: 0;
+    white-space: nowrap;
+}
+
+.compile-engine-select {
+    width: 92px;
+    min-width: 92px;
+    flex: 0 0 92px;
+}
+
+.preview-action-btn[data-tooltip]::after,
+.preview-auto-toggle[data-tooltip]::after,
+.pdf-zoom-controls[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 50%;
+    top: calc(100% + 8px);
+    transform: translateX(-50%);
+    z-index: 80;
+    width: max-content;
+    max-width: 180px;
+    padding: 5px 8px;
+    border-radius: 4px;
+    background: #111827;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.2;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 80ms ease, transform 80ms ease;
+}
+
+.preview-action-btn[data-tooltip]::before,
+.preview-auto-toggle[data-tooltip]::before,
+.pdf-zoom-controls[data-tooltip]::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: calc(100% + 3px);
+    transform: translateX(-50%);
+    z-index: 81;
+    border: 5px solid transparent;
+    border-bottom-color: #111827;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 80ms ease;
+}
+
+.preview-action-btn[data-tooltip]:hover::after,
+.preview-action-btn[data-tooltip]:hover::before,
+.preview-auto-toggle[data-tooltip]:hover::after,
+.preview-auto-toggle[data-tooltip]:hover::before,
+.pdf-zoom-controls[data-tooltip]:hover::after,
+.pdf-zoom-controls[data-tooltip]:hover::before {
+    opacity: 1;
+}
+
+.preview-action-btn[data-tooltip]:hover::after,
+.preview-auto-toggle[data-tooltip]:hover::after,
+.pdf-zoom-controls[data-tooltip]:hover::after {
+    transform: translateX(-50%) translateY(1px);
+}
+
+@container (max-width: 690px) {
+    .preview-toolbar {
+        gap: 6px;
+        min-height: 48px;
+        padding: 6px 8px;
+    }
+
+    .preview-toolbar-left,
+    .preview-toolbar-actions {
+        gap: 5px;
+    }
+
+    .preview-btn-label {
+        display: none;
+    }
+
+    .preview-action-btn {
+        width: 36px;
+        padding-left: 0;
+        padding-right: 0;
+    }
+}
+
+@container (max-width: 590px) {
+    .compile-engine-select {
+        display: none;
+    }
+}
+
+@container (max-width: 510px) {
+    .preview-auto-label {
+        display: none;
+    }
+
+    .pdf-zoom-reset-btn {
+        display: none;
+    }
+
+    .pdf-zoom-controls {
+        gap: 2px;
+        margin-right: 0;
+    }
+}
+
+@container (max-width: 410px) {
+    .pdf-zoom-controls {
+        display: none;
+    }
+}
+
+/* ---------------------------------------------------------
+ * SECTION 10: Preview Toolbar Buttons
+ * --------------------------------------------------------- */
+
+/* 컴파일 로그 버튼 */
+.compile-log-btn {
+    border: 1px solid #dc3545;
+    color: #dc3545;
+    background-color: #ffffff;
+    font-weight: 600;
+    transition: all 0.15s ease;
+}
+
+.compile-log-btn:hover {
+    background-color: #dc3545;
+    color: #ffffff;
+}
+
+/* 로그 화면 활성 상태 */
+.compile-log-btn-active {
+    border: 1px solid #dc3545;
+    background-color: #dc3545;
+    color: #ffffff;
+    font-weight: 600;
+}
+
+/* PDF 돌아가기 버튼 */
+.back-to-pdf-btn {
+    border: 1px solid #0d6efd;
+    background-color: #0d6efd;
+    color: #ffffff;
+    font-weight: 600;
+    transition: all 0.15s ease;
+}
+
+.back-to-pdf-btn:hover {
+    background-color: #0b5ed7;
+    border-color: #0b5ed7;
+    color: #ffffff;
+}
+
+/* PDF 확대/축소 버튼 */
+.pdf-zoom-controls {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+
+    margin-right: 6px;
+}
+
+.pdf-zoom-btn,
+.pdf-zoom-reset-btn {
+    border: 1px solid #ced4da;
+    background-color: #ffffff;
+    color: #343a40;
+
+    font-weight: 700;
+
+    transition:
+        background-color 0.15s ease,
+        border-color 0.15s ease,
+        color 0.15s ease;
+}
+
+.pdf-zoom-btn {
+    min-width: 30px;
+}
+
+.pdf-zoom-reset-btn {
+    min-width: 54px;
+    font-size: 0.78rem;
+}
+
+.pdf-zoom-btn:hover,
+.pdf-zoom-reset-btn:hover {
+    background-color: #f1f3f5;
+    border-color: #adb5bd;
+    color: #000000;
+}
+
+.pdf-zoom-btn:disabled,
+.pdf-zoom-reset-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+/* ---------------------------------------------------------
+ * SECTION 11: Resizable Editor Layout
+ * --------------------------------------------------------- */
+.file-tree-resizable-panel {
+    flex-shrink: 0;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+}
+
+.editor-resizable-panel {
+    flex: 1;
+    min-width: 420px;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+}
+
+.preview-resizable-panel {
+    flex-shrink: 0;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+}
+
+.resize-handle {
+    width: 6px;
+    flex-shrink: 0;
+    cursor: col-resize;
+    background-color: #d0d7de;
+    border-left: 1px solid #d0d7de;
+    border-right: 1px solid #d0d7de;
+    transition: background-color 0.15s ease;
+    z-index: 20;
+}
+
+.resize-handle:hover {
+    background-color: var(--dgu-orange-light);
+}
+
+.resize-handle:active {
+    background-color: var(--dgu-orange);
+}
+
+body.is-resizing-layout {
+    cursor: col-resize !important;
+    user-select: none;
+}
+
+body.is-resizing-layout iframe {
+    pointer-events: none;
+}
+
+/* ---------------------------------------------------------
+ * SECTION 12: Share / Member Navigation Buttons
+ * 설명: 상단 네비게이션 공유/멤버 버튼 스타일
+ * 특징:
+ * - 기존 History / Logout 버튼 톤과 통일
+ * - 과한 gradient / shadow 제거
+ * - hover 시 살짝 떠오르는 인터랙션 적용
+ * --------------------------------------------------------- */
+.btn-share-custom {
+    background-color: #4f9841;
+    color: #ffffff !important;
+    border: 1px solid #6fbf60;
+    border-radius: 0.2rem !important;
+    transition:
+        background-color 0.18s ease-in-out,
+        border-color 0.18s ease-in-out,
+        color 0.18s ease-in-out,
+        transform 0.18s ease-in-out;
+}
+
+.btn-share-custom:hover {
+    background-color: #438a36;
+    border-color: #8ed47f;
+    color: #ffffff !important;
+    transform: translateY(-1px);
+}
+
+.btn-members-custom {
+    background-color: #428fbe;
+    color: #ffffff !important;
+    border: 1px solid #71b7e3;
+    border-radius: 0.2rem !important;
+    transition:
+        background-color 0.18s ease-in-out,
+        border-color 0.18s ease-in-out,
+        color 0.18s ease-in-out,
+        transform 0.18s ease-in-out;
+}
+
+.btn-members-custom:hover {
+    background-color: #367fae;
+    border-color: #8ac8ef;
+    color: #ffffff !important;
+    transform: translateY(-1px);
+}
+
+
+/* ---------------------------------------------------------
+ * SECTION 13: Member Modal
+ * 설명:
+ * - 멤버 목록 및 참가 요청 관리 모달
+ * - 기존 DguLaTeX UI 스타일과 통일
+ * - 과하게 둥근 radius / glassmorphism / shadow 제거
+ * --------------------------------------------------------- */
+.member-modal-box {
+    width: 720px;
+    max-width: calc(100vw - 32px);
+    max-height: calc(100vh - 96px);
+    background: #ffffff;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #dee2e6;
+    box-shadow: 0 10px 32px rgba(0, 0, 0, 0.22);
+    display: flex;
+    flex-direction: column;
+}
+
+.member-modal-header {
+    padding: 18px 22px;
+    background-color: #f8f9fa;
+    background-image: none;
+    border-bottom: 1px solid #dee2e6;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.member-modal-title {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #212529;
+    letter-spacing: 0;
+}
+
+.member-modal-subtitle {
+    margin: 5px 0 0;
+    font-size: 0.84rem;
+    color: #6c757d;
+}
+
+.member-modal-close-btn {
+    width: auto;
+    height: auto;
+    border: none;
+    background: transparent;
+    color: #868e96;
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    border-radius: 0.2rem;
+    box-shadow: none;
+    transition: color 0.15s ease;
+}
+
+.member-modal-close-btn:hover {
+    background: transparent;
+    color: #212529;
+    transform: none;
+}
+
+.member-modal-tabs {
+    display: flex;
+    gap: 6px;
+    padding: 12px 20px 0;
+    background: #ffffff;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.member-modal-tabs button {
+    border: 1px solid #dee2e6;
+    border-bottom: none;
+    background: #f8f9fa;
+    color: #6c757d;
+    padding: 8px 14px;
+    border-radius: 0.2rem 0.2rem 0 0;
+    font-size: 0.84rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition:
+        background-color 0.15s ease,
+        color 0.15s ease;
+}
+
+.member-modal-tabs button:hover {
+    background: #eef3f8;
+    color: #212529;
+}
+
+.member-modal-tabs button.active {
+    background: #ffffff;
+    color: #212529;
+    border-color: #dee2e6;
+    box-shadow: none;
+}
+
+.request-count-badge {
+    margin-left: 6px;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: #dc3545;
+    color: #ffffff;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.member-modal-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 18px 20px;
+    background: #f8f9fa;
+}
+
+.member-list,
+.request-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.member-row,
+.request-row {
+    background: #ffffff;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    padding: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    box-shadow: none;
+    transition:
+        border-color 0.15s ease,
+        box-shadow 0.15s ease;
+}
+
+.member-row:hover,
+.request-row:hover {
+    border-color: #d6dbe1;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.07);
+    transform: none;
+}
+
+.member-profile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.member-avatar,
+.member-avatar.request {
+    width: 42px;
+    height: 42px;
+    border-radius: 6px;
+    background-image: none;
+    box-shadow: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.member-avatar {
+    background-color: #428fbe;
+}
+
+.member-avatar.request {
+    background-color: #4f9841;
+}
+
+.member-name {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: #212529;
+    margin-bottom: 2px;
+}
+
+.member-email {
+    font-size: 0.8rem;
+    color: #6c757d;
+    max-width: 340px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.member-role-area {
+    flex-shrink: 0;
+    min-width: 120px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.member-role-select {
+    width: 120px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    border-radius: 0.2rem !important;
+}
+
+.member-role-select:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.15rem rgba(13, 110, 253, 0.2);
+}
+
+.member-role-badge {
+    min-width: 88px;
+    text-align: center;
+    padding: 6px 10px;
+    border-radius: 0.2rem !important;
+    font-size: 0.76rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.member-role-badge.role-owner {
+    background: #fff3cd;
+    color: #8a5a00;
+    border: 1px solid #ffe08a;
+}
+
+.member-role-badge.role-editor {
+    background: #dbeafe;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+}
+
+.member-role-badge.role-viewer {
+    background: #eef2f7;
+    color: #475569;
+    border: 1px solid #d8dee4;
+}
+
+.request-role-text {
+    margin-top: 4px;
+    font-size: 0.76rem;
+    color: #428fbe;
+    font-weight: 700;
+}
+
+.request-action-buttons {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.request-action-buttons .btn,
+.member-modal-footer .btn {
+    border-radius: 0.2rem !important;
+    font-weight: 700;
+}
+
+.empty-request-box,
+.member-empty-state {
+    background: #ffffff;
+    border: 1px dashed #ced4da;
+    border-radius: 6px;
+    padding: 40px 20px;
+    text-align: center;
+    color: #6c757d;
+}
+
+.member-modal-footer {
+    padding: 14px 20px;
+    background: #ffffff;
+    border-top: 1px solid #dee2e6;
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* ---------------------------------------------------------
+ * SECTION 13-1: Member Role Management Actions
+ * 설명:
+ * - 멤버 권한 드롭다운 오른쪽 강퇴 버튼
+ * - owner 권한 강조 표시
+ * --------------------------------------------------------- */
+.member-management-area {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+
+    flex-shrink: 0;
+}
+
+.member-role-area {
+    min-width: 120px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.member-role-select {
+    width: 120px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    border-radius: 0.2rem !important;
+}
+
+.member-role-select.role-select-owner {
+    color: #dc3545;
+    border-color: #dc3545;
+    background-color: #fff5f5;
+}
+
+.role-option-owner {
+    color: #dc3545;
+    font-weight: 800;
+}
+
+.member-kick-btn {
+    border: 1px solid #dc3545;
+    background-color: #ffffff;
+    color: #dc3545;
+
+    font-size: 0.78rem;
+    font-weight: 700;
+
+    border-radius: 0.2rem !important;
+
+    transition:
+        background-color 0.15s ease,
+        border-color 0.15s ease,
+        color 0.15s ease;
+}
+
+.member-kick-btn:hover {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: #ffffff;
+}
+
+
+/* ---------------------------------------------------------
+ * SECTION 13-2: Member Confirm Modal
+ * 설명:
+ * - 권한 변경 / 강퇴 / 차단 전 최종 확인 모달
+ * --------------------------------------------------------- */
+.member-confirm-overlay {
+    position: fixed;
+    inset: 0;
+
+    z-index: 10020;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background-color: rgba(0, 0, 0, 0.28);
+}
+
+.member-confirm-box {
+    width: 380px;
+    max-width: calc(100vw - 40px);
+
+    background-color: #ffffff;
+
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+
+    padding: 22px;
+
+    text-align: center;
+}
+
+.member-confirm-title {
+    margin: 0 0 12px;
+
+    font-size: 1rem;
+    font-weight: 800;
+
+    color: #212529;
+}
+
+.member-confirm-message {
+    margin: 0 0 20px;
+
+    color: #495057;
+
+    font-size: 0.9rem;
+    line-height: 1.55;
+
+    word-break: keep-all;
+}
+
+.member-confirm-actions {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+}
+
+.member-confirm-actions .btn {
+    border-radius: 0.2rem !important;
+    font-weight: 700;
+}
+
+/* ---------------------------------------------------------
+ * SECTION 14: Share Modal
+ * 설명:
+ * - 공유 링크 생성 UI
+ * - 기존 네비 / 대시보드 톤과 통일
+ * - 과하게 둥근 radius / gradient / shadow 제거
+ * --------------------------------------------------------- */
+.share-modal-box {
+    width: 620px;
+    max-width: calc(100vw - 32px);
+    background: #ffffff;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #dee2e6;
+    box-shadow: 0 10px 32px rgba(0, 0, 0, 0.22);
+}
+
+.share-modal-header {
+    padding: 18px 22px;
+    background-color: #f8f9fa;
+    background-image: none;
+    border-bottom: 1px solid #dee2e6;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.share-modal-title {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #212529;
+}
+
+.share-modal-subtitle {
+    margin: 5px 0 0;
+    font-size: 0.84rem;
+    color: #6c757d;
+}
+
+.share-modal-close-btn {
+    width: auto;
+    height: auto;
+    border: none;
+    background: transparent;
+    color: #868e96;
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    border-radius: 0.2rem;
+    box-shadow: none;
+    transition: color 0.15s ease;
+}
+
+.share-modal-close-btn:hover {
+    background: transparent;
+    color: #212529;
+}
+
+.share-modal-content {
+    padding: 18px 22px;
+    background: #ffffff;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.share-link-card {
+    background: #ffffff;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    padding: 14px;
+    box-shadow: none;
+}
+
+.share-link-card.editor {
+    border-left: 4px solid #428fbe;
+}
+
+.share-link-card.viewer {
+    border-left: 4px solid #4f9841;
+}
+
+.share-role-label {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: #212529;
+}
+
+.share-role-desc {
+    margin-top: 3px;
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+.share-link-row {
+    margin-top: 10px;
+    display: flex;
+    gap: 8px;
+}
+
+.share-link-input {
+    font-size: 0.82rem;
+    background-color: #f8f9fa;
+    border-radius: 0.2rem;
+}
+
+.share-copy-btn {
+    min-width: 68px;
+    font-weight: 700;
+    border-radius: 0.2rem !important;
+}
+
+.share-modal-footer {
+    padding: 14px 22px;
+    background: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.share-modal-footer .btn {
+    border-radius: 0.2rem !important;
+    font-weight: 700;
+}
+
+/* 공유 링크 input + 재발급 버튼 */
+.share-link-input-group {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+}
+
+.share-link-input-group .share-link-input {
+    padding-right: 38px;
+}
+
+.share-refresh-btn {
+    position: absolute;
+    top: 50%;
+    right: 6px;
+
+    transform: translateY(-58%);
+
+    width: 28px;
+    height: 28px;
+
+    border: none;
+    border-radius: 0.2rem;
+
+    background-color: transparent;
+    color: #6c757d;
+
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1;
+
+    padding: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    cursor: pointer;
+
+    transition:
+        background-color 0.15s ease,
+        color 0.15s ease,
+        transform 0.15s ease;
+}
+
+.share-refresh-btn:hover {
+    background-color: #e9ecef;
+    color: #212529;
+}
+
+.share-refresh-btn:active {
+    transform: translateY(-50%) rotate(90deg);
+}
+

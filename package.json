@@ -1,0 +1,14 @@
+{
+  "name": "dgulatex-workspace",
+  "private": true,
+  "scripts": {
+    "dev": "node scripts/dev-all.js",
+    "dev:all": "node scripts/dev-all.js",
+    "start": "npm run dev",
+    "backend": "npm --prefix BackEnd start",
+    "yws": "npm --prefix BackEnd run yws",
+    "frontend": "npm --prefix FrontEnd run dev",
+    "stop:dev": "node scripts/stop-dev.js",
+    "dev:fresh": "node scripts/stop-dev.js && node scripts/dev-all.js"
+  }
+}
