@@ -167,7 +167,7 @@ function AIChatUI({
                 <div className="ai-chat-header d-flex justify-content-between align-items-center">
                     <div className="d-flex align-items-center gap-2">
                         <span className="ai-sparkle-icon">✨</span>
-                        <strong className="chat-title-text">Chat DguLaTeX</strong>
+                        <strong className="chat-title-text">Chat DGULaTeX</strong>
                     </div>
                     <button className="btn-close-chat-ui" onClick={toggleChat}>&times;</button>
                 </div>

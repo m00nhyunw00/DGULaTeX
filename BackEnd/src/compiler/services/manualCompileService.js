@@ -101,7 +101,8 @@ exports.compileManual = async ({
         mainTexPath,
         engine: compileEngine,
         timeoutMs: 30000,
-        compilePasses: 2
+        compilePasses: 2,
+        lineMaps: sanitizeResult.lineMaps || {}
       });
     } catch (err) {
       err.detail = [

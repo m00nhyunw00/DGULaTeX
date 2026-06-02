@@ -91,6 +91,40 @@ async function graphicsFileExists({ graphicsPath, texFilePath, workspacePath }) 
   return false;
 }
 
+function isAddedMissingEndMarker(line) {
+  return String(line || '').trim().startsWith('% [SANITIZED: added missing end');
+}
+
+function buildOriginalLineMapFromSanitizedText(sanitizedText = '') {
+  const lines = String(sanitizedText || '').split('\n');
+  const compiledToOriginal = {};
+  let originalLine = 1;
+  let previousLineWasInsertedEndMarker = false;
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const compiledLine = index + 1;
+    const trimmed = String(lines[index] || '').trim();
+
+    if (isAddedMissingEndMarker(lines[index])) {
+      compiledToOriginal[compiledLine] = null;
+      previousLineWasInsertedEndMarker = true;
+      continue;
+    }
+
+    if (previousLineWasInsertedEndMarker && /^\\end\{[^}]+\}$/.test(trimmed)) {
+      compiledToOriginal[compiledLine] = null;
+      previousLineWasInsertedEndMarker = false;
+      continue;
+    }
+
+    previousLineWasInsertedEndMarker = false;
+    compiledToOriginal[compiledLine] = originalLine;
+    originalLine += 1;
+  }
+
+  return compiledToOriginal;
+}
+
 async function removeMissingGraphics(filePath, workspacePath) {
   const originalText = await fs.readFile(filePath, 'utf8');
   const lines = originalText.split('\n');
@@ -154,6 +188,7 @@ async function sanitizeOneFile(filePath, workspacePath) {
   // sanitize 결과를 원래 파일에 덮어쓰기
   const sanitizedText = await fs.readFile(tempSanitizedPath, 'utf8');
   await fs.writeFile(filePath, sanitizedText, 'utf8');
+  const lineMap = buildOriginalLineMapFromSanitizedText(sanitizedText);
 
   // 임시 sanitized 파일 제거
   await fs.rm(tempSanitizedPath, { force: true });
@@ -170,6 +205,7 @@ async function sanitizeOneFile(filePath, workspacePath) {
     sanitizedPath: filePath,
     logPath,
     compileTargetPath: filePath,
+    lineMap,
     actionCount: result.logs.length + missingGraphicsLogs.length,
     compileLog: [
       compileLog,
@@ -221,11 +257,18 @@ exports.sanitizeWorkspace = async (workspacePath) => {
     return sum + (result.actionCount || 0);
   }, 0);
 
+  const lineMaps = results.reduce((maps, result) => {
+    const relativePath = path.relative(workspacePath, result.inputPath).split(path.sep).join('/');
+    maps[relativePath] = result.lineMap || {};
+    return maps;
+  }, {});
+
   return {
     sanitized: true,
     workspacePath,
     fileCount: texFiles.length,
     actionCount,
+    lineMaps,
     compileLog: compileLog || '[SANITIZE]\n자동 보정된 내용은 없습니다.'
   };
 };

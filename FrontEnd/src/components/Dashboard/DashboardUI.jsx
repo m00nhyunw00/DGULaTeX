@@ -222,7 +222,7 @@ function DashboardUI({
     return (
         <div className="project-dashboard">
             <nav className="navbar navbar-dark top-nav-fixed shadow-sm">
-                <span className="navbar-brand fw-bold text-dgu m-0">DguLaTeX</span>
+                <span className="navbar-brand fw-bold text-dgu m-0">DGULaTeX</span>
                 <div className="d-flex align-items-center ms-auto">
                     <span className="text-white me-3 small">
                         <strong className="text-dgu">{userName || '사용자'}</strong>님 접속 중

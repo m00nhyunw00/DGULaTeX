@@ -17,6 +17,7 @@ function FileTreeUI({
     selectedIds,
     setSelectedIds,
     mainFileId,
+    compileErrorEntryIds = [],
     editingNodeId,
     editNodeTitle,
     setEditNodeTitle,
@@ -144,6 +145,7 @@ function FileTreeUI({
                             selectedIds={selectedIds} 
                             setSelectedIds={setSelectedIds} 
                             mainFileId={mainFileId}
+                            compileErrorEntryIds={compileErrorEntryIds}
                             // 🎯 [전달]
                             editingNodeId={editingNodeId}
                             editNodeTitle={editNodeTitle}

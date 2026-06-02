@@ -4,7 +4,18 @@
  * 설명: 사용자 인터페이스 렌더링과 화면 상호작용을 담당함
  * =================================================================
  */
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+
+const hasChangeLabel = (node) => {
+    const label = String(node?.label || '').toUpperCase();
+    return Boolean(label && label !== 'NONE');
+};
+
+const hasChangedDescendant = (node) => {
+    if (!node?.children || node.children.length === 0) return false;
+
+    return node.children.some((child) => hasChangeLabel(child) || hasChangedDescendant(child));
+};
 
 /**
  * @param {Object} item - 노드 데이터
@@ -21,8 +32,15 @@ function HistoryFileTreeNode({
     const isFolder = item.type === 'folder';
     const hasChildren = item.children && item.children.length > 0;
     const isActive = activeFileId === item.id;
+    const shouldAutoOpen = isFolder && hasChildren && (hasChangeLabel(item) || hasChangedDescendant(item));
 
-    const [isOpen, setIsOpen] = useState(false);
+    const [isOpen, setIsOpen] = useState(shouldAutoOpen);
+
+    useEffect(() => {
+        if (shouldAutoOpen) {
+            setIsOpen(true);
+        }
+    }, [item.id, shouldAutoOpen]);
 
     const handleClick = () => {
         if (isFolder) {

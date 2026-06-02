@@ -34,6 +34,120 @@ function redactSensitivePaths(line, { workspacePath = '' } = {}) {
 
   return nextLine;
 }
+
+function normalizeLogPath(value = '') {
+  return String(value || '')
+    .replace(/\\/g, '/')
+    .replace(/^\.\//, '')
+    .replace(/^\/+/, '');
+}
+
+function findLineMap(lineMaps = {}, filePath = '') {
+  const normalizedPath = normalizeLogPath(filePath);
+  if (!normalizedPath) return null;
+
+  if (lineMaps[normalizedPath]) return lineMaps[normalizedPath];
+
+  const matchedKey = Object.keys(lineMaps).find((key) => {
+    const normalizedKey = normalizeLogPath(key);
+    return normalizedKey === normalizedPath || normalizedKey.endsWith('/' + normalizedPath);
+  });
+
+  return matchedKey ? lineMaps[matchedKey] : null;
+}
+
+function resolveOriginalLine(lineMap, compiledLine) {
+  const lineNumber = Number.parseInt(compiledLine, 10);
+  if (!lineMap || !Number.isFinite(lineNumber) || lineNumber <= 0) return lineNumber;
+
+  const direct = lineMap[lineNumber];
+  if (Number.isFinite(direct) && direct > 0) return direct;
+
+  for (let line = lineNumber - 1; line >= 1; line -= 1) {
+    const previous = lineMap[line];
+    if (Number.isFinite(previous) && previous > 0) return previous;
+  }
+
+  for (let line = lineNumber + 1; line <= lineNumber + 20; line += 1) {
+    const next = lineMap[line];
+    if (Number.isFinite(next) && next > 0) return next;
+  }
+
+  return lineNumber;
+}
+
+function applyOriginalLineMap(lines = [], { lineMaps = {}, mainTexPath = '' } = {}) {
+  const mainTexKey = normalizeLogPath(mainTexPath);
+  let currentFileKey = mainTexKey;
+
+  return lines.map((line) => {
+    let nextLine = String(line || '');
+
+    nextLine = nextLine.replace(/(^|[\s(])([^:\s()\[\]"]+\.tex):(\d+):/gi, (match, prefix, filePath, lineNumber) => {
+      const lineMap = findLineMap(lineMaps, filePath);
+      currentFileKey = normalizeLogPath(filePath);
+
+      if (!lineMap) return match;
+
+      const originalLine = resolveOriginalLine(lineMap, lineNumber);
+      return prefix + filePath + ':' + originalLine + ':';
+    });
+
+    nextLine = nextLine.replace(/(^|\s)l\.(\d+)(?=\s|$)/g, (match, prefix, lineNumber) => {
+      const lineMap = findLineMap(lineMaps, currentFileKey || mainTexKey);
+      if (!lineMap) return match;
+
+      const originalLine = resolveOriginalLine(lineMap, lineNumber);
+      return prefix + 'l.' + originalLine;
+    });
+
+    return nextLine;
+  });
+}
+
+function formatCompileTimestamp(value = new Date()) {
+  const date = value instanceof Date ? value : new Date(value);
+  const safeDate = Number.isNaN(date.getTime()) ? new Date() : date;
+
+  return new Intl.DateTimeFormat('sv-SE', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  }).format(safeDate) + ' KST';
+}
+
+function buildCompilePassLog({ compilePasses = 1, pass = 1, compileLog = '' }) {
+  return [
+    compilePasses > 1 ? '[COMPILE PASS] ' + pass + '/' + compilePasses : '',
+    compileLog
+  ].filter(Boolean).join('\n');
+}
+
+function buildCompileLog({
+  compileEngine,
+  compilePasses,
+  compileLogs,
+  status = 'success',
+  completedAt = new Date()
+}) {
+  const isFailed = status === 'failed';
+
+  return [
+    '[COMPILE ENGINE] ' + compileEngine,
+    compilePasses > 1 ? '[COMPILE PASSES] ' + compilePasses : '',
+    '',
+    '[COMPILE TIME]',
+    '컴파일 ' + (isFailed ? '실패' : '성공') + ' 시간: ' + formatCompileTimestamp(completedAt),
+    '',
+    compileLogs.filter(Boolean).join('\n\n')
+  ].filter(Boolean).join('\n');
+}
+
 function extractUsefulLatexLines(stdout = '', stderr = '') {
     const lines = String(stdout || '').split(/\r?\n/);
     const picked = [];
@@ -112,9 +226,12 @@ function extractUsefulLatexLines(stdout = '', stderr = '') {
     return picked.filter(line => line.trim() !== '');
 }
 
-function buildUserCompileLog({ stdout = '', stderr = '', failed = false, workspacePath = '' }) {
-  const usefulLines = extractUsefulLatexLines(stdout, stderr)
-    .map(line => redactSensitivePaths(line, { workspacePath }));
+function buildUserCompileLog({ stdout = '', stderr = '', failed = false, workspacePath = '', lineMaps = {}, mainTexPath = '' }) {
+  const usefulLines = applyOriginalLineMap(
+    extractUsefulLatexLines(stdout, stderr)
+      .map(line => redactSensitivePaths(line, { workspacePath })),
+    { lineMaps, mainTexPath }
+  );
 
   const outputLine = usefulLines.find(line =>
     line.includes('Output written on')
@@ -217,5 +334,7 @@ function buildUserCompileLog({ stdout = '', stderr = '', failed = false, workspa
 }
 
 module.exports = {
-  buildUserCompileLog
+  buildUserCompileLog,
+  buildCompilePassLog,
+  buildCompileLog
 };

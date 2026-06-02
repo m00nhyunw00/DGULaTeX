@@ -11,6 +11,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const http = require('http');
+const path = require('path');
 const { Server } = require('socket.io');
 
 /* ---------------------------------------------------------
@@ -26,6 +27,7 @@ const historyRoutes = require('./routes/historyRoutes');
 const registerProjectSocket = require('./socket/projectSocket');
 
 const app = express();
+const frontendDistPath = path.resolve(__dirname, '../../FrontEnd/dist');
 
 const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173')
     .split(',')
@@ -122,7 +124,7 @@ function startServer(port) {
 
         console.log(`
     ========================================================
-    🚀 DguLaTeX Backend Server is running!
+    🚀 DGULaTeX Backend Server is running!
     📍 GPU Server URL: http://localhost:${port}
     📅 Time: ${new Date().toLocaleString()}
     📝 Status: Column 'project_id' NULL Check Ready

@@ -306,6 +306,23 @@ const historyModel = {
     deleteHistoryStructureRow: async (connection, versionId, entryId) => {
         const sql = `DELETE FROM history_structure WHERE version_id = ? AND entry_id = ?`;
         return connection.execute(sql, [versionId, entryId]);
+    },
+
+    /** [DELETE] 특정 버전의 구조 스냅숏 전체 삭제 */
+    deleteHistoryStructureByVersionId: async (connection, versionId) => {
+        const sql = `DELETE FROM history_structure WHERE version_id = ?`;
+        return connection.execute(sql, [versionId]);
+    },
+
+    countRestoreDependents: async (connection, versionId) => {
+        const sql = "SELECT COUNT(*) AS count FROM history WHERE restore_from_ver = ?";
+        const [rows] = await connection.execute(sql, [versionId]);
+        return Number(rows[0]?.count || 0);
+    },
+
+    deleteHistoryVersion: async (connection, versionId) => {
+        const sql = "DELETE FROM history WHERE version_id = ?";
+        return connection.execute(sql, [versionId]);
     }
 };
 

@@ -122,6 +122,69 @@ const buildStructureMap = (rows = []) => {
     return new Map(rows.map(row => [row.entry_id.toString('hex'), row]));
 };
 
+const bufferHex = (value) => {
+    return value ? value.toString('hex') : null;
+};
+
+const hasStructureDiff = (liveEntries = [], snapshotRows = []) => {
+    if (liveEntries.length !== snapshotRows.length) {
+        return true;
+    }
+
+    const snapshotMap = buildStructureMap(snapshotRows);
+
+    for (const entry of liveEntries) {
+        const snapshot = snapshotMap.get(entry.id.toString('hex'));
+
+        if (!snapshot) {
+            return true;
+        }
+
+        if (snapshot.entry_name !== entry.title) {
+            return true;
+        }
+
+        if (bufferHex(snapshot.parent_id) !== bufferHex(entry.parent_id)) {
+            return true;
+        }
+
+        if (Number(snapshot.is_folder) !== Number(entry.is_folder)) {
+            return true;
+        }
+    }
+
+    return false;
+};
+
+const getMeaningfulStructureChanges = (currentRows = [], prevRows = [], mode = "log") => {
+    return historyLogic
+        .compareProjectStructures(currentRows, prevRows, mode)
+        .filter((row) => row.label && row.label !== "NONE");
+};
+
+const deleteHistoryVersionIfLogless = async (connection, { versionId, projectId, currentRows, prevRows }) => {
+    const meta = await historyModel.findHistoryByIdAndProjectId(connection, versionId, projectId);
+
+    if (!meta || meta.restore_from_ver) {
+        return false;
+    }
+
+    const changes = getMeaningfulStructureChanges(currentRows, prevRows, "log");
+
+    if (changes.length > 0) {
+        return false;
+    }
+
+    const dependentCount = await historyModel.countRestoreDependents(connection, versionId);
+
+    if (dependentCount > 0) {
+        return false;
+    }
+
+    await historyModel.deleteHistoryVersion(connection, versionId);
+    return true;
+};
+
 const resolveStructureContentId = async (connection, entry, previousStructureMap) => {
     const previousRow = previousStructureMap?.get(entry.id.toString('hex'));
 
@@ -237,6 +300,8 @@ const historyController = {
             const project = await projectModel.findById(connection, bProjectId);
             if (!project) throw new Error("프로젝트를 찾을 수 없습니다.");
 
+            const previousVersionMeta = await historyModel.findLatestVersionMeta(connection, bProjectId);
+
             const bVersionId = crypto.randomBytes(16);
             const rawVersionId = bVersionId.toString('hex');
             const createdAt = new Date();
@@ -280,6 +345,30 @@ const historyController = {
                     contentId: bContentId,
                     parentId: entry.parent_id,
                     isFolder: entry.is_folder
+                });
+            }
+
+            const savedRowsForLog = await historyModel.findHistoryStructureByVersionId(connection, bVersionId);
+            const previousRowsForLog = previousVersionMeta
+                ? await historyModel.findHistoryStructureByVersionId(connection, previousVersionMeta.version_id)
+                : [];
+            const isLoglessVersionDeleted = await deleteHistoryVersionIfLogless(connection, {
+                versionId: bVersionId,
+                projectId: bProjectId,
+                currentRows: savedRowsForLog,
+                prevRows: previousRowsForLog
+            });
+
+            if (isLoglessVersionDeleted) {
+                await connection.commit();
+                return res.status(200).json({
+                    status: "success",
+                    message: "LOGLESS_HISTORY_VERSION_DELETED",
+                    data: {
+                        isVersionDeleted: true,
+                        versionId: rawVersionId,
+                        projectId
+                    }
                 });
             }
 
@@ -722,12 +811,25 @@ const historyController = {
             // 2. 파일의 전체 계층 경로(루트 -> 대상 파일) 생성
             const pathNodes = [];
             let curr = targetMap.get(entryId);
+            let missingAncestorId = null;
             while (curr) {
                 pathNodes.unshift(curr);
                 const pId = curr.parent_id ? curr.parent_id.toString('hex') : null;
+                if (pId && !targetMap.has(pId)) {
+                    missingAncestorId = pId;
+                    break;
+                }
                 curr = pId ? targetMap.get(pId) : null;
             }
 
+            if (missingAncestorId) {
+                await connection.rollback();
+                return res.status(409).json({
+                    status: "error",
+                    message: "히스토리 스냅숏의 부모 폴더 정보가 누락되어 파일 계층을 복원할 수 없습니다.",
+                    data: { missingAncestorId }
+                });
+            }
             if (pathNodes[pathNodes.length - 1].is_folder === 1) {
                 await connection.rollback();
                 return res.status(400).json({ status: "error", message: "폴더 단위 롤백은 지원하지 않습니다." });
@@ -753,11 +855,14 @@ const historyController = {
                     liveId = existing[0].id;
                     
                     if (isTargetFile) {
-                        const [contentRows] = await connection.execute(
-                            `SELECT content FROM history_contents WHERE content_id = ?`,
-                            [node.content_id]
-                        );
-                        const rolledBackContent = contentRows[0]?.content || '';
+                        let rolledBackContent = "";
+                        if (node.content_id) {
+                            const [contentRows] = await connection.execute(
+                                "SELECT content FROM history_contents WHERE content_id = ?",
+                                [node.content_id]
+                            );
+                            rolledBackContent = contentRows[0]?.content || "";
+                        }
                         const bNewContentHash = generateContentHashBuffer(rolledBackContent);
                         await connection.execute(
                             `UPDATE entry SET current_content = ?, content_hash = ?, is_folder = 0, updated_at = CURRENT_TIMESTAMP 
@@ -767,23 +872,31 @@ const historyController = {
                         finalLiveId = liveId;
                     }
                 } else {
-                    // [CASE 2] 존재하지 않음 -> 히스토리 스냅숏의 원래 ID를 재사용 (물리 파일 연결 유지)
+                    // [CASE 2] 같은 경로는 없지만 스냅숏 ID가 이미 다른 라이브 엔트리에 쓰이면 새 ID를 발급
+                    const [idRows] = await connection.execute(
+                        "SELECT id FROM entry WHERE project_id = ? AND id = ? LIMIT 1",
+                        [bProjectId, node.entry_id]
+                    );
+                    liveId = idRows.length > 0 ? entryLogic.generateBinaryId() : node.entry_id;
                     let content = null;
                     let bHash = null;
 
                     if (isTargetFile) {
-                        const [contentRows] = await connection.execute(
-                            `SELECT content FROM history_contents WHERE content_id = ?`,
-                            [node.content_id]
-                        );
-                        content = contentRows[0]?.content || '';
+                        if (node.content_id) {
+                            const [contentRows] = await connection.execute(
+                                "SELECT content FROM history_contents WHERE content_id = ?",
+                                [node.content_id]
+                            );
+                            content = contentRows[0]?.content || "";
+                        } else {
+                            content = "";
+                        }
                         bHash = generateContentHashBuffer(content);
                         finalLiveId = liveId;
                     }
                     await connection.execute(
-                        `INSERT INTO entry (id, project_id, parent_id, is_folder, title, current_content, content_hash) 
-                         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-                        [liveId, bProjectId, currentLiveParentId, node.is_folder, node.entry_name, content, bHash]
+                        "INSERT INTO entry (id, project_id, parent_id, is_folder, title, current_content, content_hash) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                        [liveId, bProjectId, currentLiveParentId || null, Number(node.is_folder), node.entry_name, content, bHash]
                     );
                 }
                 currentLiveParentId = liveId;
@@ -1185,10 +1298,29 @@ const historyController = {
             // 현재 프로젝트 메타데이터 조회 (메인 파일 ID 획득용)
             const project = await projectModel.findById(connection, bProjectId);
             if (!project) throw new Error("프로젝트를 찾을 수 없습니다.");
+            const currentEntries = await historyModel.findLiveEntriesForSnapshot(connection, bProjectId);
+            const latestRows = latestMeta
+                ? await historyModel.findHistoryStructureByVersionId(connection, latestMeta.version_id)
+                : [];
+            const structureChanged = !latestMeta || hasStructureDiff(currentEntries, latestRows);
+
+            if (!structureChanged) {
+                await connection.commit();
+                return res.status(200).json({
+                    status: "success",
+                    message: "파일 트리 구조 변경이 없어 히스토리 버전을 생성하지 않았습니다.",
+                    data: {
+                        isNewVersionCreated: false,
+                        isStructureChanged: false,
+                        versionId: latestMeta.version_id.toString('hex')
+                    }
+                });
+            }
 
             const now = new Date();
             let bTargetVersionId = latestMeta?.version_id;
             let isNewVersionCreated = false;
+            let prevRowsForLog = [];
 
             if (!latestMeta) {
                 isNewVersionCreated = true;
@@ -1221,9 +1353,9 @@ const historyController = {
                 const previousRows = latestMeta
                     ? await historyModel.findHistoryStructureByVersionId(connection, latestMeta.version_id)
                     : [];
+                prevRowsForLog = previousRows;
                 const previousStructureMap = buildStructureMap(previousRows);
                 // [ACCEPT] 새로운 버전 생성 시 현재 라이브 데이터를 전량 복제하여 박제
-                const currentEntries = await historyModel.findLiveEntriesForSnapshot(connection, bProjectId);
                 for (const entry of currentEntries) {
                     const bContentId = await resolveStructureContentId(connection, entry, previousStructureMap);
 
@@ -1236,77 +1368,56 @@ const historyController = {
             // [CASE B] 5분 이내: 동일 버전 내부에서 정밀 비교 후 단일 행 조작 (핵심 기획)
             // =================================================================
             else {
-                // ① 기존 target 버전의 구조 데이터 로드 및 Map 변환 (조회 최적화)
-                //  [CHANGED] 모델 함수명을 findHistoryStructureByVersionId로 정확히 일치시킴
-                const existingRows = await historyModel.findHistoryStructureByVersionId(connection, bTargetVersionId);
-                const existingMap = buildStructureMap(existingRows);
+                const prevVerForLog = latestMeta
+                    ? await historyModel.findPreviousVersionId(connection, bProjectId, latestMeta.created_at)
+                    : null;
+                prevRowsForLog = prevVerForLog
+                    ? await historyModel.findHistoryStructureByVersionId(connection, prevVerForLog.version_id)
+                    : [];
+                const previousStructureMap = buildStructureMap(latestRows);
 
-                // ② 현재 에디터의 실시간 라이브 엔트리 목록 로드 및 Map 변환
-                // 🔥 [CHANGED] 모델 함수명을 findLiveEntriesForSnapshot으로 변경
-                const currentEntries = await historyModel.findLiveEntriesForSnapshot(connection, bProjectId);
-                const currentMap = new Map(currentEntries.map(entry => [entry.id.toString('hex'), entry]));
+                await historyModel.deleteHistoryStructureByVersionId(connection, bTargetVersionId);
 
-                let isStructureChanged = false;
-
-                // ➕ 1. 생성(Created) 및 이름/위치 변경(Rename/Move) 순회 탐색
                 for (const entry of currentEntries) {
-                    const entryHex = entry.id.toString('hex');
+                    const bContentId = await resolveStructureContentId(connection, entry, previousStructureMap);
 
-                    if (!existingMap.has(entryHex)) {
-                        // 🎯 [CREATED] 이전 구조에 없던 새 파일 발견 -> 행 딱 하나만 누적 추가!
-                        let bContentId = null;
-                        // if (!entry.is_folder) {
-                        //     bContentId = generateContentHashBuffer(entry.current_content);
-                        //     await historyModel.insertHistoryContent(connection, { contentId: bContentId, content: entry.current_content });
-                        // }
-                        if (!entry.is_folder && isTextEditableFile(entry.title)) {
-                            bContentId = generateContentHashBuffer(entry.current_content);
-                            await historyModel.insertHistoryContent(connection, {
-                                contentId: bContentId,
-                                content: entry.current_content || ''
-                            });
-                        }
-                        await historyModel.insertHistoryStructure(connection, {
-                            versionId: bTargetVersionId, entryId: entry.id, entryName: entry.title, contentId: bContentId, parentId: entry.parent_id, isFolder: entry.is_folder
-                        });
-                        isStructureChanged = true;
-                    } else {
-                        // 🎯 [RENAME / MOVE] 이전 구조에 이미 있던 파일 발견 -> 내용 검증 후 메타데이터만 변경
-                        const oldRow = existingMap.get(entryHex);
-                        
-                        const isNameChanged = oldRow.entry_name !== entry.title;
-                        const isParentChanged = oldRow.parent_id?.toString('hex') !== entry.parent_id?.toString('hex');
-
-                        const actionType = isParentChanged ? 'MOVED' : (isNameChanged ? 'RENAMED' : 'NONE');
-
-                        if (actionType !== 'NONE') {
-                            await historyModel.updateHistoryStructure(connection, {
-                                versionId: bTargetVersionId, 
-                                entryId: entry.id, 
-                                entryName: entry.title, 
-                                parentId: entry.parent_id
-                            });
-                            isStructureChanged = true;
-                        }
-                    }
+                    await historyModel.insertHistoryStructure(connection, {
+                        versionId: bTargetVersionId,
+                        entryId: entry.id,
+                        entryName: entry.title,
+                        contentId: bContentId,
+                        parentId: entry.parent_id,
+                        isFolder: entry.is_folder
+                    });
                 }
+            }
 
-                // ➖ 2. 삭제(Deleted) 순회 탐색
-                for (const oldRow of existingRows) {
-                    const oldHex = oldRow.entry_id.toString('hex');
-                    if (!currentMap.has(oldHex)) {
-                        // 🎯 [DELETED] 이전 구조엔 있었는데 라이브 리스트에서 지워짐 -> 해당 파일 행 제거!
-                        await historyModel.deleteHistoryStructureRow(connection, bTargetVersionId, oldRow.entry_id);
-                        isStructureChanged = true;
+            const finalRowsForLog = await historyModel.findHistoryStructureByVersionId(connection, bTargetVersionId);
+            const isLoglessVersionDeleted = await deleteHistoryVersionIfLogless(connection, {
+                versionId: bTargetVersionId,
+                projectId: bProjectId,
+                currentRows: finalRowsForLog,
+                prevRows: prevRowsForLog
+            });
+
+            if (isLoglessVersionDeleted) {
+                await connection.commit();
+                return res.status(200).json({
+                    status: "success",
+                    message: "LOGLESS_HISTORY_VERSION_DELETED",
+                    data: {
+                        isNewVersionCreated: false,
+                        isVersionDeleted: true,
+                        versionId: bTargetVersionId.toString("hex")
                     }
-                }
-
-                await historyModel.touchHistoryVersion(connection, {
-                    versionId: bTargetVersionId,
-                    actionType: 'STRUCTURE',
-                    mainFileId: project.main_file_id
                 });
             }
+
+            await historyModel.touchHistoryVersion(connection, {
+                versionId: bTargetVersionId,
+                actionType: 'STRUCTURE',
+                mainFileId: project.main_file_id
+            });
 
             await connection.commit();
             return res.status(200).json({

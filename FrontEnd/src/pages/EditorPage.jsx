@@ -213,6 +213,7 @@ function EditorPage({ user, project, handleLogout, backToDashboard, goToHistory,
             setSelectedIds={editorLogic.setSelectedIds}
             pdfUrl={editorLogic.pdfUrl}
             compileLog={editorLogic.compileLog}
+            compileErrorEntryIds={editorLogic.compileErrorEntryIds}
             isCompiling={editorLogic.isCompiling}
             compileEngine={editorLogic.compileEngine}
             setCompileEngine={editorLogic.setCompileEngine}

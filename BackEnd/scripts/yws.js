@@ -6,13 +6,18 @@
  */
 const path = require('path');
 const { spawn } = require('child_process');
-require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
+const dotenv = require('dotenv');
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+
+if (!process.env.YJS_HOST || !process.env.YJS_PORT) {
+  dotenv.config({ path: path.resolve(__dirname, '../.env.example') });
+}
 
 const host = process.env.YJS_HOST;
 const port = process.env.YJS_PORT;
 
 if (!host || !port) {
-  throw new Error('YJS_HOST and YJS_PORT must be set in BackEnd/.env.');
+  throw new Error('YJS_HOST and YJS_PORT must be set in BackEnd/.env or BackEnd/.env.example.');
 }
 const serverBin = path.resolve(__dirname, '../node_modules/y-websocket/bin/server.cjs');
 

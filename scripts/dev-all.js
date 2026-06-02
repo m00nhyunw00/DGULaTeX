@@ -4,6 +4,8 @@
  * 설명: 루트 명령 하나로 백엔드 API, Yjs 협업 서버, 프론트엔드 개발 서버를 함께 실행함
  * =================================================================
  */
+const fs = require('fs');
+const path = require('path');
 const net = require('net');
 const { spawn } = require('child_process');
 
@@ -14,23 +16,68 @@ const commands = [
     name: 'backend',
     color: '\x1b[36m',
     args: ['--prefix', 'BackEnd', 'start'],
-    port: 5000
+    port: 5000,
+    envFiles: ['BackEnd/.env.example', 'BackEnd/.env']
   },
   {
     name: 'yws',
     color: '\x1b[35m',
     args: ['--prefix', 'BackEnd', 'run', 'yws'],
-    port: 1234
+    port: 1234,
+    envFiles: ['BackEnd/.env.example', 'BackEnd/.env']
   },
   {
     name: 'frontend',
     color: '\x1b[32m',
     args: ['--prefix', 'FrontEnd', 'run', 'dev'],
-    port: 5173
+    port: 5173,
+    envFiles: ['FrontEnd/.env.example', 'FrontEnd/.env']
   }
 ];
 
 const reset = '\x1b[0m';
+const parseEnvFile = (filePath) => {
+  if (!fs.existsSync(filePath)) return {};
+
+  const env = {};
+  const lines = fs.readFileSync(filePath, 'utf8').split(/\r?\n/);
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+
+    const separatorIndex = trimmed.indexOf('=');
+    if (separatorIndex === -1) continue;
+
+    const key = trimmed.slice(0, separatorIndex).trim();
+    let value = trimmed.slice(separatorIndex + 1).trim();
+
+    if (
+      (value.startsWith('\"') && value.endsWith('\"')) ||
+      (value.startsWith(String.fromCharCode(39)) && value.endsWith(String.fromCharCode(39)))
+    ) {
+      value = value.slice(1, -1);
+    }
+
+    if (key) env[key] = value;
+  }
+
+  return env;
+};
+
+const loadCommandEnv = (command) => {
+  const fileEnv = {};
+
+  for (const envFile of command.envFiles || []) {
+    Object.assign(fileEnv, parseEnvFile(path.resolve(process.cwd(), envFile)));
+  }
+
+  return {
+    ...fileEnv,
+    ...process.env
+  };
+};
+
 const children = [];
 const outputBuffers = new Map();
 let shuttingDown = false;
@@ -115,7 +162,7 @@ const startAll = async () => {
   for (const command of commands) {
     const child = spawn(npmCommand, command.args, {
       cwd: process.cwd(),
-      env: process.env,
+      env: loadCommandEnv(command),
       detached: process.platform !== 'win32',
       stdio: ['inherit', 'pipe', 'pipe']
     });

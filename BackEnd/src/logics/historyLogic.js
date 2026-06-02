@@ -69,6 +69,66 @@ const historyLogic = {
         const currentMap = new Map(currentRows.map(r => [r.entry_id.toString('hex'), r]));
         const prevMap = new Map(prevRows.map(r => [r.entry_id.toString('hex'), r]));
         const results = [];
+        const resultIds = new Set();
+
+        const pushResult = (row) => {
+            const id = row.entryId || row.entry_id?.toString('hex');
+            if (!id) return;
+
+            const existingIndex = results.findIndex((item) => item.entryId === id || item.entry_id?.toString('hex') === id);
+            if (existingIndex >= 0) {
+                const currentLabel = String(results[existingIndex].label || 'NONE').toUpperCase();
+                const nextLabel = String(row.label || 'NONE').toUpperCase();
+
+                if (currentLabel === 'NONE' && nextLabel !== 'NONE') {
+                    results[existingIndex] = {
+                        ...results[existingIndex],
+                        ...row,
+                        entryId: id
+                    };
+                }
+                return;
+            }
+
+            resultIds.add(id);
+            results.push(row);
+        };
+
+        const includeCurrentAncestors = (row) => {
+            let parentId = row.parent_id ? row.parent_id.toString(hex) : null;
+
+            while (parentId && !resultIds.has(parentId)) {
+                const parent = currentMap.get(parentId);
+                if (!parent) break;
+
+                pushResult({
+                    ...parent,
+                    entryId: parentId,
+                    label: NONE,
+                    parentId: parent.parent_id ? parent.parent_id.toString(hex) : null
+                });
+
+                parentId = parent.parent_id ? parent.parent_id.toString(hex) : null;
+            }
+        };
+
+        const includePreviousAncestors = (row) => {
+            let parentId = row.parent_id ? row.parent_id.toString('hex') : null;
+
+            while (parentId && !resultIds.has(parentId)) {
+                const parent = prevMap.get(parentId);
+                if (!parent) break;
+
+                pushResult({
+                    ...parent,
+                    entryId: parentId,
+                    label: 'NONE',
+                    parentId: parent.parent_id ? parent.parent_id.toString('hex') : null
+                });
+
+                parentId = parent.parent_id ? parent.parent_id.toString('hex') : null;
+            }
+        };
 
         // H(n) 기준으로 루프 (EDITED, DELETED/ADDED, RENAMED, MOVED 감지)
         for (const [id, curr] of currentMap) {
@@ -92,11 +152,11 @@ const historyLogic = {
                     label = 'EDITED';
                 }
 
-                results.push({ ...curr, entryId: id, label });
+                pushResult({ ...curr, entryId: id, label });
             } else {
                 // H(n)에는 있는데 H(n-1)에는 없는 경우
                 const label = mode === 'log' ? 'CREATED' : 'ADDED';
-                results.push({ ...curr, entryId: id, label });
+                pushResult({ ...curr, entryId: id, label });
             }
         }
 
@@ -105,7 +165,8 @@ const historyLogic = {
             if (!currentMap.has(id)) {
                 // H(n-1)에는 있는데 H(n)에는 없는 경우
                 const label = mode === 'log' ? 'DELETED' : 'REMOVED';
-                results.push({ 
+                includePreviousAncestors(prev);
+                pushResult({ 
                     ...prev, 
                     entryId: id, 
                     label,

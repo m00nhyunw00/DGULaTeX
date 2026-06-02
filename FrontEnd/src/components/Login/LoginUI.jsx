@@ -64,7 +64,7 @@ function LoginUI({
 
                 {/* 파트 1: 브랜드 로고 및 서비스 타이틀 영역 */}
                 <div className="text-center mb-4">
-                    <h1 className="dgu-logo">DguLaTeX</h1>
+                    <h1 className="dgu-logo">DGULaTeX</h1>
                     <p className="text-secondary small">동국대학교 온라인 LaTeX 편집기</p>
                 </div>
 
@@ -305,7 +305,7 @@ function LoginUI({
                         className="team-credit-link"
                         onClick={() => setIsTeamModalOpen(true)}
                     >
-                        DguLaTeX Team
+                        DGULaTeX Team
                     </button>
                 </div>
             </div>

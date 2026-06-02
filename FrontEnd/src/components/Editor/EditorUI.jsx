@@ -29,6 +29,7 @@ function EditorUI(props) {
         setSelectedIds,
         pdfUrl,
         compileLog,
+        compileErrorEntryIds,
         isCompiling,
         compileEngine,
         setCompileEngine,
@@ -528,6 +529,7 @@ function EditorUI(props) {
                         selectedIds={selectedIds}
                         setSelectedIds={setSelectedIds}
                         mainFileId={mainFileId}
+                        compileErrorEntryIds={compileErrorEntryIds}
                         editingNodeId={editingNodeId}
                         editNodeTitle={editNodeTitle}
                         setEditNodeTitle={setEditNodeTitle}

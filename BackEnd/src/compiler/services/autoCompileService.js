@@ -88,7 +88,8 @@ exports.compileAuto = async ({
       workspacePath: workspace.path,
       mainTexPath,
       engine: compileEngine,
-      timeoutMs: 20000
+      timeoutMs: 20000,
+      lineMaps: sanitizeResult.lineMaps || {}
     });
   } catch (err) {
     if (sanitizeResult.compileLog) {

@@ -4,7 +4,7 @@
  * 설명: 파일 트리, 편집기, 컴파일, PDF 미리보기, 협업 상태와 마지막 커서 복원을 관리함
  * =================================================================
  */
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { buildFileTree } from '../utils/buildTree';
 import { buildAssetUrl } from '../utils/assetUrl';
 import { EditorService } from '../services/EditorService';
@@ -31,6 +31,7 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
 
     const [pdfUrl, setPdfUrl] = useState('');
     const [compileLog, setCompileLog] = useState('');
+    const [dismissedCompileErrorFileIds, setDismissedCompileErrorFileIds] = useState([]);
     const [isCompiling, setIsCompiling] = useState(false);
     const [compileEngine, setCompileEngine] = useState('pdflatex');
 
@@ -48,6 +49,7 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
     const initialContentRef = useRef('');
 
     const editorRef = useRef(null);
+    const monacoRef = useRef(null);
     const ydocRef = useRef(null);
     const ytextRef = useRef(null);
     const providerRef = useRef(null);
@@ -55,6 +57,7 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
 
     const isYjsReadyRef = useRef(false);
     const editorChangeDisposableRef = useRef(null);
+    const dismissTouchedCompileErrorsRef = useRef(() => {});
     const yjsSessionRef = useRef(0);
     const contributorsMapRef = useRef(null);
     const ytextObserverRef = useRef(null);
@@ -69,6 +72,7 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
     // 자동 컴파일용 ref
     const isAutoCompileRef = useRef(false);
     const isAutoCompilingRef = useRef(false);
+    const isCompileRunningRef = useRef(false);
     const handleAutoCompileRef = useRef(null);
 
     const isHistoryTriggerRunningRef = useRef(false);
@@ -318,6 +322,7 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
         const finalRealUserId = currentUser?.uuid || currentUser?.id || "2019112014";
 
         isAutoCompilingRef.current = true;
+        isCompileRunningRef.current = true;
         setIsCompiling(true);
 
         try {
@@ -351,15 +356,19 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
                 }
 
                 setCompileLog(result.compileLog || "자동 컴파일 성공");
+                setDismissedCompileErrorFileIds([]);
             } else {
                 setCompileLog(result?.compileLog || result?.message || "자동 컴파일 실패");
+                setDismissedCompileErrorFileIds([]);
             }
         } catch (error) {
             console.error('[AUTO COMPILE ERROR]');
 
             setCompileLog(error.compileLog || error.message || "자동 컴파일 중 오류가 발생했습니다.");
+            setDismissedCompileErrorFileIds([]);
         } finally {
             isAutoCompilingRef.current = false;
+            isCompileRunningRef.current = false;
             setIsCompiling(false);
         }
     }, [selectedProject, mainFileId, currentUser, getSnapshotText, toUuid, compileEngine]);
@@ -393,6 +402,300 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
 
         return null;
     }, []);
+
+    const getEntryDisplayName = useCallback((entry) => (
+        entry?.fileName ||
+        entry?.title ||
+        entry?.name ||
+        ''
+    ), []);
+
+    const normalizeCompileLogPath = useCallback((value = '') => (
+        String(value || '')
+            .replace(/\\/g, '/')
+            .replace(/^\.\//, '')
+            .replace(/^\/+/, '')
+            .toLowerCase()
+            .trim()
+    ), []);
+
+    const findEntryPathById = useCallback((nodes, targetId, parentParts = []) => {
+        const cleanTargetId = normalizeEntryId(targetId);
+
+        for (const node of nodes || []) {
+            const nodeId = normalizeEntryId(node.id || node.fileId);
+            const nodeName = getEntryDisplayName(node);
+            const nextParts = nodeName ? [...parentParts, nodeName] : parentParts;
+
+            if (nodeId === cleanTargetId) {
+                return nextParts.join('/');
+            }
+
+            const found = findEntryPathById(node.children, cleanTargetId, nextParts);
+            if (found) return found;
+        }
+
+        return '';
+    }, [getEntryDisplayName, normalizeEntryId]);
+
+    const getActiveFileCompilePath = useCallback(() => {
+        const tree = filesRef.current || files;
+        const activePath = findEntryPathById(tree, activeFileIdRef.current);
+
+        if (activePath) return activePath;
+
+        return activeFileMeta?.name || '';
+    }, [activeFileMeta, files, findEntryPathById]);
+
+    const isSameCompileLogPath = useCallback((logPath = '', activePath = '') => {
+        const normalizedLogPath = normalizeCompileLogPath(logPath);
+        const normalizedActivePath = normalizeCompileLogPath(activePath);
+
+        if (!normalizedLogPath || !normalizedActivePath) return false;
+        if (normalizedLogPath === normalizedActivePath) return true;
+
+        return normalizedActivePath.endsWith('/' + normalizedLogPath) ||
+            normalizedLogPath.endsWith('/' + normalizedActivePath);
+    }, [normalizeCompileLogPath]);
+
+    const extractCompileErrorMarkers = useCallback((rawLog = '') => {
+        const lines = String(rawLog || '').split(/\r?\n/);
+        const markers = [];
+        let currentFilePath = '';
+        let pendingFileLineError = null;
+        let inErrorsSection = false;
+
+        const pushMarker = (marker) => {
+            if (!marker?.lineNumber || marker.lineNumber < 1) return;
+
+            markers.push({
+                filePath: marker.filePath || currentFilePath || '',
+                lineNumber: marker.lineNumber,
+                message: marker.message || 'LaTeX compile error'
+            });
+        };
+
+        lines.forEach((line) => {
+            const text = String(line || '');
+            const trimmed = text.trim();
+
+            if (trimmed === '[ERRORS]') {
+                inErrorsSection = true;
+                return;
+            }
+
+            if (/^\[[A-Z_\s]+\]$/.test(trimmed) && trimmed !== '[ERRORS]') {
+                inErrorsSection = false;
+                return;
+            }
+
+            if (!inErrorsSection && !trimmed.startsWith('!') && !/[^:\s]+\.tex:\d+:/i.test(trimmed) && !/^l\.\d+/.test(trimmed)) {
+                return;
+            }
+
+            const fileLineMatch = trimmed.match(/([^:\s()\[\]"]+\.tex):(\d+):(.*)$/i);
+            if (fileLineMatch) {
+                const [, filePath, lineNumber, message] = fileLineMatch;
+                currentFilePath = filePath;
+                pendingFileLineError = {
+                    filePath,
+                    lineNumber: Number.parseInt(lineNumber, 10),
+                    message: (message || '').trim()
+                };
+                pushMarker(pendingFileLineError);
+                return;
+            }
+
+            const linePointerMatch = trimmed.match(/^l\.(\d+)\s*(.*)$/);
+            if (linePointerMatch) {
+                const [, lineNumber, sourcePreview] = linePointerMatch;
+                const lineMessage = pendingFileLineError?.message || sourcePreview || 'LaTeX compile error';
+
+                pushMarker({
+                    filePath: currentFilePath || pendingFileLineError?.filePath || '',
+                    lineNumber: Number.parseInt(lineNumber, 10),
+                    message: lineMessage
+                });
+                return;
+            }
+
+            if (trimmed.startsWith('!') && pendingFileLineError) {
+                pendingFileLineError.message = trimmed.replace(/^!\s*/, '') || pendingFileLineError.message;
+            }
+        });
+
+        const deduped = new Map();
+        markers.forEach((marker) => {
+            const key = normalizeCompileLogPath(marker.filePath) + ':' + marker.lineNumber + ':' + marker.message;
+            if (!deduped.has(key)) deduped.set(key, marker);
+        });
+
+        return Array.from(deduped.values());
+    }, [normalizeCompileLogPath]);
+
+    const isCompileErrorFileDismissed = useCallback((fileId) => {
+        const cleanFileId = normalizeEntryId(fileId);
+        if (!cleanFileId) return false;
+
+        return dismissedCompileErrorFileIds.some((dismissedId) => (
+            normalizeEntryId(dismissedId) === cleanFileId
+        ));
+    }, [dismissedCompileErrorFileIds, normalizeEntryId]);
+
+    const dismissTouchedCompileErrors = useCallback((changes = []) => {
+        if (isCompileRunningRef.current || isAutoCompilingRef.current) return;
+
+        const activeId = normalizeEntryId(activeFileIdRef.current);
+        if (!activeId || isCompileErrorFileDismissed(activeId)) return;
+
+        const activePath = getActiveFileCompilePath();
+        const activeName = activeFileMeta?.name || '';
+        const activeErrors = extractCompileErrorMarkers(compileLog)
+            .filter((error) => {
+                if (!error.filePath) return true;
+
+                return isSameCompileLogPath(error.filePath, activePath) ||
+                    isSameCompileLogPath(error.filePath, activeName);
+            });
+
+        if (activeErrors.length === 0) return;
+
+        const touched = changes.some((change) => {
+            const changedStart = change?.range?.startLineNumber || 1;
+            const changedEnd = Math.max(
+                change?.range?.endLineNumber || changedStart,
+                changedStart
+            );
+
+            return activeErrors.some((error) => {
+                const errorLine = Number.parseInt(error.lineNumber, 10);
+                if (!Number.isFinite(errorLine) || errorLine < 1) return false;
+
+                const touchStart = Math.max(1, errorLine - 1);
+                const touchEnd = errorLine + 1;
+
+                return changedStart <= touchEnd && changedEnd >= touchStart;
+            });
+        });
+
+        if (!touched) return;
+
+        setDismissedCompileErrorFileIds((prev) => {
+            if (prev.some((id) => normalizeEntryId(id) === activeId)) return prev;
+            return [...prev, activeId];
+        });
+    }, [
+        activeFileMeta,
+        compileLog,
+        extractCompileErrorMarkers,
+        getActiveFileCompilePath,
+        isCompileErrorFileDismissed,
+        isSameCompileLogPath,
+        normalizeEntryId
+    ]);
+
+    useEffect(() => {
+        dismissTouchedCompileErrorsRef.current = dismissTouchedCompileErrors;
+    }, [dismissTouchedCompileErrors]);
+
+    const applyCompileErrorMarkers = useCallback(() => {
+        const editor = editorRef.current;
+        const monaco = monacoRef.current;
+        const model = editor?.getModel?.();
+
+        if (!monaco?.editor || !model) return;
+
+        const activePath = getActiveFileCompilePath();
+        const activeName = activeFileMeta?.name || '';
+        const lineCount = model.getLineCount?.() || 1;
+
+        if (isCompileErrorFileDismissed(activeFileIdRef.current)) {
+            monaco.editor.setModelMarkers(model, 'latex-compile', []);
+            return;
+        }
+
+        const markers = extractCompileErrorMarkers(compileLog)
+            .filter((error) => {
+                if (!error.filePath) return Boolean(activePath || activeName);
+                return isSameCompileLogPath(error.filePath, activePath) ||
+                    isSameCompileLogPath(error.filePath, activeName);
+            })
+            .map((error) => {
+                const startLineNumber = Math.min(Math.max(error.lineNumber, 1), lineCount);
+
+                return {
+                    severity: monaco.MarkerSeverity.Error,
+                    message: error.message || 'LaTeX compile error',
+                    startLineNumber,
+                    startColumn: 1,
+                    endLineNumber: startLineNumber,
+                    endColumn: model.getLineMaxColumn?.(startLineNumber) || 1
+                };
+            });
+
+        monaco.editor.setModelMarkers(model, 'latex-compile', markers);
+    }, [
+        activeFileMeta,
+        compileLog,
+        extractCompileErrorMarkers,
+        getActiveFileCompilePath,
+        isCompileErrorFileDismissed,
+        isSameCompileLogPath
+    ]);
+
+    useEffect(() => {
+        applyCompileErrorMarkers();
+    }, [applyCompileErrorMarkers, activeFileId, files]);
+
+    const compileErrorEntryIds = useMemo(() => {
+        const errorIds = new Set();
+        const errors = extractCompileErrorMarkers(compileLog);
+        if (errors.length === 0) return [];
+
+        const visit = (nodes, parentIds = [], parentParts = []) => {
+            for (const node of nodes || []) {
+                const nodeId = normalizeEntryId(node.id || node.fileId);
+                if (!nodeId) continue;
+
+                const nodeName = getEntryDisplayName(node);
+                const nextParts = nodeName ? [...parentParts, nodeName] : parentParts;
+                const nodePath = nextParts.join('/');
+                const isFolder = node.type === 'folder';
+
+                if (!isFolder && !isCompileErrorFileDismissed(nodeId)) {
+                    const hasError = errors.some((error) => {
+                        if (!error.filePath) {
+                            return nodeId === normalizeEntryId(activeFileIdRef.current);
+                        }
+
+                        return isSameCompileLogPath(error.filePath, nodePath) ||
+                            isSameCompileLogPath(error.filePath, nodeName);
+                    });
+
+                    if (hasError) {
+                        errorIds.add(nodeId);
+                        parentIds.forEach((parentId) => errorIds.add(parentId));
+                    }
+                }
+
+                if (node.children?.length) {
+                    visit(node.children, [...parentIds, nodeId], nextParts);
+                }
+            }
+        };
+
+        visit(filesRef.current || files);
+
+        return Array.from(errorIds);
+    }, [
+        compileLog,
+        extractCompileErrorMarkers,
+        files,
+        getEntryDisplayName,
+        isCompileErrorFileDismissed,
+        isSameCompileLogPath,
+        normalizeEntryId
+    ]);
 
     /* ---------------------------------------------------------
     * SECTION: History Editor Capture
@@ -1016,6 +1319,7 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
         isYjsReadyRef.current = false;
 
         editorRef.current = editor;
+        monacoRef.current = monaco;
 
         const readOnly = !canEditProjectRef.current;
 
@@ -1165,11 +1469,13 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
                 editorChangeDisposableRef.current = null;
             }
 
-            editorChangeDisposableRef.current = editorRef.current.onDidChangeModelContent(() => {
+            editorChangeDisposableRef.current = editorRef.current.onDidChangeModelContent((event) => {
                 if (yjsSessionRef.current !== sessionId) return;
                 if (!isYjsReadyRef.current) return;
                 if (isApplyingHistoryRestoreRef.current) return;
                 if (Date.now() < historyRestoreSuppressUntilRef.current) return;
+
+                dismissTouchedCompileErrorsRef.current(event?.changes || []);
 
                 if (saveTimerRef.current) {
                     clearTimeout(saveTimerRef.current);
@@ -1230,6 +1536,12 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
         ytextRef.current = ytext;
         providerRef.current = provider;
 
+        requestAnimationFrame(() => {
+            if (yjsSessionRef.current === sessionId) {
+                applyCompileErrorMarkers();
+            }
+        });
+
     }, [
         selectedProject,
         currentUser,
@@ -1241,7 +1553,8 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
         normalizeEntryId,
         getUserColor,
         scheduleCursorSessionSave,
-        applyPendingRestoreCursor
+        applyPendingRestoreCursor,
+        applyCompileErrorMarkers
     ]);
 
     const insertSnippet = useCallback((template) => {
@@ -1420,6 +1733,30 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
         }
     };
 
+    const collectEntryAndDescendantIds = useCallback((entries, targetIds) => {
+        const targets = new Set((targetIds || []).map(id => normalizeEntryId(id)));
+        const collected = new Set();
+
+        const visit = (nodes = [], isInsideTarget = false) => {
+            for (const node of nodes) {
+                const nodeId = normalizeEntryId(node?.id || node?.fileId);
+                if (!nodeId) continue;
+
+                const nextInsideTarget = isInsideTarget || targets.has(nodeId);
+                if (nextInsideTarget) {
+                    collected.add(nodeId);
+                }
+
+                if (Array.isArray(node.children) && node.children.length > 0) {
+                    visit(node.children, nextInsideTarget);
+                }
+            }
+        };
+
+        visit(entries);
+        return collected;
+    }, [normalizeEntryId]);
+
     const handleDeleteEntry = async (idOrIds) => {
         if (!canEditProjectRef.current) {
             alert('Viewer 권한은 이 작업을 수행할 수 없습니다.');
@@ -1434,6 +1771,14 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
         const idsToDelete = Array.isArray(idOrIds)
             ? idOrIds.map(id => String(id).replace(/-/g, '').toLowerCase())
             : [String(idOrIds).replace(/-/g, '').toLowerCase()];
+
+        const deleteScopeIds = collectEntryAndDescendantIds(filesRef.current, idsToDelete);
+        const cleanMainFileId = normalizeEntryId(mainFileId);
+
+        if (cleanMainFileId && deleteScopeIds.has(cleanMainFileId)) {
+            alert("main 파일은 삭제할 수 없습니다.");
+            return;
+        }
 
         const result = await EditorService.delete(pId, idsToDelete);
 
@@ -1628,6 +1973,7 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
             }
         }
 
+        isCompileRunningRef.current = true;
         setIsCompiling(true);
 
         try {
@@ -1646,11 +1992,13 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
             const result = await CompilerService.manualCompile(pId, compilePayload);
 
             setIsCompiling(false);
+            isCompileRunningRef.current = false;
 
             if (result && result.success) {
                 const url = result.pdfUrl || result.data?.pdfUrl || result.data?.pdf_url;
                 if (url) setPdfUrl(`${url}?t=${new Date().getTime()}`);
                 setCompileLog(result.compileLog || "성공");
+                setDismissedCompileErrorFileIds([]);
             } else {
                 setCompileErrorModal({
                     isOpen: true,
@@ -1658,9 +2006,11 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
                     message: result?.message || '문법 에러 발생'
                 });
                 setCompileLog(result?.compileLog || "");
+                setDismissedCompileErrorFileIds([]);
             }
         } catch (error) {
             setIsCompiling(false);
+            isCompileRunningRef.current = false;
 
             setCompileErrorModal({
                 isOpen: true,
@@ -1832,11 +2182,21 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
         });
 
         if (result.success) {
+            const nextOwnerId = result.ownerId || result.newOwnerId;
+
+            if (nextRole === 'owner' && nextOwnerId) {
+                const normalizedOwnerId = normalizeEntryId(nextOwnerId);
+                onProjectPatch?.({
+                    ownerId: normalizedOwnerId,
+                    ownerUuid: normalizedOwnerId
+                });
+            }
+
             await refreshProjectMembers();
         }
 
         return result;
-    }, [getProjectId, getRequesterId, refreshProjectMembers]);
+    }, [getProjectId, getRequesterId, refreshProjectMembers, normalizeEntryId, onProjectPatch]);
 
     const removeProjectMember = useCallback(async (memberId) => {
         const pId = getProjectId();
@@ -1921,6 +2281,18 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
             setMyProjectRole(nextRole);
         }
 
+        if (nextRole === 'owner') {
+            const nextOwnerId = payload?.ownerId || payload?.newOwnerId || payload?.memberId || currentUser?.uuid || currentUser?.id;
+
+            if (nextOwnerId) {
+                const normalizedOwnerId = normalizeEntryId(nextOwnerId);
+                onProjectPatch?.({
+                    ownerId: normalizedOwnerId,
+                    ownerUuid: normalizedOwnerId
+                });
+            }
+        }
+
         // 내 권한이 바뀐 경우에도 서버 기준 멤버 목록을 다시 맞춤
         await refreshProjectMembers();
 
@@ -1940,7 +2312,7 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
         if (nextRole === 'owner') {
             alert('프로젝트 소유자가 되었습니다.');
         }
-    }, [refreshProjectMembers]);
+    }, [refreshProjectMembers, currentUser, normalizeEntryId, onProjectPatch]);
 
     const handleSocketEditPermissionRevoked = useCallback(async (payload) => {
 
@@ -1958,10 +2330,19 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
     }, [refreshProjectMembers]);
 
     const handleSocketOwnerTransferred = useCallback(async (payload) => {
+        const nextOwnerId = payload?.ownerId || payload?.newOwnerId;
+
+        if (nextOwnerId) {
+            const normalizedOwnerId = normalizeEntryId(nextOwnerId);
+            onProjectPatch?.({
+                ownerId: normalizedOwnerId,
+                ownerUuid: normalizedOwnerId
+            });
+        }
 
         // owner 표시/멤버 role 모두 바뀌므로 재조회가 가장 안전함
         await refreshProjectMembers();
-    }, [refreshProjectMembers]);
+    }, [refreshProjectMembers, normalizeEntryId, onProjectPatch]);
 
     const handleSocketMemberRemoved = useCallback(async (payload) => {
 
@@ -2164,6 +2545,7 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
         getSnapshotText,
         pdfUrl,
         compileLog,
+        compileErrorEntryIds,
         isCompiling,
         compileEngine,
         setCompileEngine,

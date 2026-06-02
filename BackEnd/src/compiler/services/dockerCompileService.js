@@ -24,41 +24,6 @@ function toPosixPath(p) {
 }
 
 
-function formatCompileTimestamp(value = new Date()) {
-  const date = value instanceof Date ? value : new Date(value);
-  const safeDate = Number.isNaN(date.getTime()) ? new Date() : date;
-
-  return new Intl.DateTimeFormat('sv-SE', {
-    timeZone: 'Asia/Seoul',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false
-  }).format(safeDate) + ' KST';
-}
-
-function buildCompileLog({
-  compileEngine,
-  compilePasses,
-  compileLogs,
-  status = 'success',
-  completedAt = new Date()
-}) {
-  const isFailed = status === 'failed';
-
-  return [
-    '[COMPILE ENGINE] ' + compileEngine,
-    compilePasses > 1 ? '[COMPILE PASSES] ' + compilePasses : '',
-    '',
-    '[COMPILE TIME]',
-    '컴파일 ' + (isFailed ? '실패' : '성공') + ' 시간: ' + formatCompileTimestamp(completedAt),
-    '',
-    compileLogs.filter(Boolean).join('\n\n')
-  ].filter(Boolean).join('\n');
-}
 
 function runProcess(command, args, options = {}) {
   const {
@@ -112,7 +77,8 @@ exports.compileLatex = async ({
   mainTexPath,
   engine = 'pdflatex',
   timeoutMs = 30000,
-  compilePasses = 1
+  compilePasses = 1,
+  lineMaps = {}
 }) => {
   if (!workspacePath || !mainTexPath) {
     throw new ApiError(400, 'MISSING_COMPILE_PATHS');
@@ -230,16 +196,19 @@ exports.compileLatex = async ({
       stdout: result.stdout,
       stderr: result.stderr,
       failed: result.timedOut || result.code !== 0,
-      workspacePath
+      workspacePath,
+      lineMaps,
+      mainTexPath: containerMainTexPath
     });
 
-    compileLogs.push([
-      normalizedCompilePasses > 1 ? `[COMPILE PASS] ${pass}/${normalizedCompilePasses}` : '',
-      latexCompileLog
-    ].filter(Boolean).join('\n'));
+    compileLogs.push(compileLogService.buildCompilePassLog({
+      compilePasses: normalizedCompilePasses,
+      pass,
+      compileLog: latexCompileLog
+    }));
 
     const failedAt = new Date();
-    const currentUserCompileLog = buildCompileLog({
+    const currentUserCompileLog = compileLogService.buildCompileLog({
       compileEngine,
       compilePasses: normalizedCompilePasses,
       compileLogs,
@@ -265,7 +234,7 @@ exports.compileLatex = async ({
   }
 
   const successAt = new Date();
-  const userCompileLog = buildCompileLog({
+  const userCompileLog = compileLogService.buildCompileLog({
     compileEngine,
     compilePasses: normalizedCompilePasses,
     compileLogs,
@@ -274,7 +243,7 @@ exports.compileLatex = async ({
   });
 
   if (!fs.existsSync(pdfPath)) {
-    const pdfMissingLog = buildCompileLog({
+    const pdfMissingLog = compileLogService.buildCompileLog({
       compileEngine,
       compilePasses: normalizedCompilePasses,
       compileLogs,

@@ -19,6 +19,7 @@ function FileTreeNode({
     selectedIds,
     setSelectedIds,
     mainFileId,
+    compileErrorEntryIds = [],
     editingNodeId,
     editNodeTitle,
     setEditNodeTitle,
@@ -31,6 +32,7 @@ function FileTreeNode({
     const isFolder = item.type === 'folder';
     const isSelected = selectedIds.map(id => String(id).toLowerCase()).includes(currentId);
     const isCurrentItemMain = mainFileId && currentId === String(mainFileId).trim().toLowerCase();
+    const hasCompileError = compileErrorEntryIds.map(id => String(id).replace(/-/g, '').toLowerCase()).includes(currentId.replace(/-/g, ''));
 
     const onDragStart = (e) => {
         e.stopPropagation();
@@ -136,7 +138,7 @@ function FileTreeNode({
 
     return (
         <div className="tree-node-wrapper" draggable={true} onDragStart={onDragStart} onDragEnter={handleDragOverAction} onDragOver={handleDragOverAction} onDragLeave={onDragLeave} onDrop={onDrop}>
-            <div className={`tree-item ${String(activeFileId).toLowerCase() === currentId ? 'active' : ''} ${dragOverId === currentId ? 'drag-over' : ''} ${isSelected ? 'selected' : ''}`} style={{ paddingLeft: `${depth * 15 + 10}px`, cursor: 'pointer', display: 'flex', alignItems: 'center' }} onClick={handleClick} onContextMenu={onRightClick}>
+            <div className={`tree-item ${String(activeFileId).toLowerCase() === currentId ? 'active' : ''} ${dragOverId === currentId ? 'drag-over' : ''} ${isSelected ? 'selected' : ''} ${hasCompileError ? 'compile-error' : ''}`} style={{ paddingLeft: `${depth * 15 + 10}px`, cursor: 'pointer', display: 'flex', alignItems: 'center' }} onClick={handleClick} onContextMenu={onRightClick}>
                 {renderChevron()}
                 <span className="me-2" style={{ minWidth: '22px', textAlign: 'center' }}>{getIcon()}</span>
                 
@@ -162,7 +164,7 @@ function FileTreeNode({
                         onBlur={() => submitNodeRename(currentId, editNodeTitle, isFolder)} // 바깥 클릭 시 저장
                     />
                 ) : (
-                    <span className={`file-name ${isFolder ? 'fw-bold text-dark' : isCurrentItemMain ? 'fw-bold text-primary' : 'text-secondary'}`} style={{ fontSize: '0.9rem' }}>
+                    <span className={`file-name ${hasCompileError ? 'compile-error-name' : isFolder ? 'fw-bold text-dark' : isCurrentItemMain ? 'fw-bold text-primary' : 'text-secondary'}`} style={{ fontSize: '0.9rem' }}>
                         {currentName}
                     </span>
                 )}
@@ -185,6 +187,7 @@ function FileTreeNode({
                             selectedIds={selectedIds} 
                             setSelectedIds={setSelectedIds} 
                             mainFileId={mainFileId}
+                            compileErrorEntryIds={compileErrorEntryIds}
                             // 🎯 재귀 파이프라인
                             editingNodeId={editingNodeId}
                             editNodeTitle={editNodeTitle}

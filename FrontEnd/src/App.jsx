@@ -94,6 +94,34 @@ function ProjectRoute({
         };
     }, [projectId, selectedProject, setSelectedProject]);
 
+    useEffect(() => {
+        if (mode !== "history" || !projectId) return undefined;
+
+        let isCancelled = false;
+
+        const refreshProjectForHistory = async () => {
+            try {
+                const result = await ProjectService.getById(projectId);
+
+                if (!isCancelled && result.success) {
+                    setSelectedProject((prev) => ({
+                        ...(prev || {}),
+                        ...result.data
+                    }));
+                }
+            } catch (error) {
+                // 히스토리 진입 시 권한 표시 최신화 실패는 기존 프로젝트 화면 흐름을 막지 않는다.
+                console.error("[PROJECT REFRESH ERROR]", error);
+            }
+        };
+
+        refreshProjectForHistory();
+
+        return () => {
+            isCancelled = true;
+        };
+    }, [mode, projectId, setSelectedProject]);
+
     const project = selectedProject;
     const currentId = project?.id || project?._id || project?.projectId;
 
@@ -132,7 +160,7 @@ function ProjectRoute({
                 project={project}
                 backToEditor={(state) => {
                     const navigationState = state?.forceDbOnOpen ? state : null;
-                    const nextMainEntryId = state?.mainEntryId || state?.openEntryId;
+                    const nextMainEntryId = state?.mainEntryId;
 
                     if (nextMainEntryId) {
                         const normalizedMainEntryId = normalizeId(nextMainEntryId);

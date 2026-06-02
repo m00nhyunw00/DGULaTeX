@@ -224,6 +224,36 @@
     border-radius: 4px;
 }
 
+.tree-item.compile-error {
+    background-color: #fff1f2;
+    border-left: 3px solid #dc3545;
+}
+
+.tree-item.compile-error:hover {
+    background-color: #ffe4e6;
+    color: #b42318;
+}
+
+.tree-item.compile-error.active {
+    background-color: #dc3545 !important;
+    color: #fff !important;
+}
+
+.tree-item.compile-error.selected:not(.active) {
+    background-color: #ffe4e6 !important;
+    border-left-color: #dc3545;
+    color: #b42318 !important;
+}
+
+.file-name.compile-error-name {
+    color: #b42318 !important;
+    font-weight: 700;
+}
+
+.tree-item.compile-error.active .file-name.compile-error-name {
+    color: #fff !important;
+}
+
 /* ---------------------------------------------------------
  * SECTION 3: Central Editor Section
  * --------------------------------------------------------- */
@@ -1701,7 +1731,7 @@ body.is-resizing-layout iframe {
  * SECTION 13: Member Modal
  * 설명:
  * - 멤버 목록 및 참가 요청 관리 모달
- * - 기존 DguLaTeX UI 스타일과 통일
+ * - 기존 DGULaTeX UI 스타일과 통일
  * - 과하게 둥근 radius / glassmorphism / shadow 제거
  * --------------------------------------------------------- */
 .member-modal-box {
