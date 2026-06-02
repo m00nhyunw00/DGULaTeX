@@ -1,6 +1,6 @@
-# DguLaTeX
+# DGULaTeX
 
-DguLaTeX는 동국대학교 학생을 위한 웹 기반 LaTeX 편집 및 실시간 협업 플랫폼입니다.  
+DGULaTeX는 동국대학교 학생을 위한 웹 기반 LaTeX 편집 및 실시간 협업 플랫폼입니다.  
 브라우저에서 프로젝트 생성, 파일 트리 관리, Monaco Editor 기반 LaTeX 편집, Yjs 기반 공동 편집, Docker 기반 PDF 컴파일, 히스토리 롤백, AI 보조 기능까지 하나의 작업 흐름으로 제공합니다.
 
 이 문서는 프로젝트 소개서이자 기술 이양 문서입니다. 처음 프로젝트를 넘겨받는 사람은 이 README를 통해 실행 환경과 전체 구조를 파악하고, 포트폴리오 검토자는 어떤 문제를 어떤 기술로 해결했는지 빠르게 확인할 수 있습니다.
@@ -24,7 +24,7 @@ DguLaTeX는 동국대학교 학생을 위한 웹 기반 LaTeX 편집 및 실시�
 
 ## Portfolio Summary
 
-DguLaTeX는 단순 CRUD 웹앱이 아니라 편집기, 실시간 동기화, 파일 시스템, PDF 컴파일, 권한 관리, 히스토리, AI 보조가 결합된 통합 협업 도구입니다.
+DGULaTeX는 단순 CRUD 웹앱이 아니라 편집기, 실시간 동기화, 파일 시스템, PDF 컴파일, 권한 관리, 히스토리, AI 보조가 결합된 통합 협업 도구입니다.
 
 | 관점 | 구현 내용 |
 | :--- | :--- |
@@ -113,7 +113,7 @@ Browser
 | FrontEnd/ | React + Vite 클라이언트 |
 | BackEnd/ | Express API 서버, 컴파일러, Socket.IO, Yjs 서버 스크립트 |
 | scripts/dev-all.js | 루트에서 프론트/백엔드/Yjs를 한 번에 실행하고 필수 포트 충돌을 사전 검사하는 개발 스크립트 |
-| scripts/stop-dev.js | 1234/5000/5173 등 개발 포트를 점유한 이전 DguLaTeX 프로세스 정리 스크립트 |
+| scripts/stop-dev.js | 1234/5000/5173 등 개발 포트를 점유한 이전 DGULaTeX 프로세스 정리 스크립트 |
 | schema.sql | MySQL 테이블 생성 스키마 |
 | database.md | DB 설계 및 테이블 설명 문서 |
 | package.json | 루트 통합 실행 스크립트 |
