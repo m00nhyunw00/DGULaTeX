@@ -130,11 +130,9 @@ FrontEnd/.env는 FrontEnd/.env.example을 기준으로 생성합니다.
 ~~~env
 VITE_API_URL=http://localhost:5000
 VITE_YJS_URL=ws://localhost:5000/yjs
-# 추후 y-websocket 분리 실행 시에만 예비 포트 1234 형태로 변경:
-# VITE_YJS_URL=ws://localhost:1234
 ~~~
 
-SSH Remote 환경에서는 브라우저 기준 localhost가 로컬 PC이므로, 현재 기본 실행 기준 VS Code 포트 포워딩에서 5173, 5000이 열려 있어야 합니다. 1234는 추후 y-websocket 분리 실행을 위한 임시 예비 포트이며 현재 프로그램은 1234로 동작하지 않습니다.
+SSH Remote 환경에서는 브라우저 기준 localhost가 로컬 PC이므로, 현재 기본 실행 기준 VS Code 포트 포워딩에서 5173, 5000만 열려 있으면 됩니다. 현재 프로그램은 1234 포트를 사용하지 않습니다.
 
 ## 실행 방법
 
@@ -175,7 +173,7 @@ Vite 빌드 결과물은 FrontEnd/dist/에 생성되며 GitHub에는 업로드�
 
 - VITE_API_URL이 실제 백엔드 포트와 일치하는지 확인
 - 같은 브라우저의 여러 탭은 하나의 로그인 상태를 공유하고, 이미 로그인된 계정을 다른 브라우저에서 다시 로그인하면 `이미 로그인 중입니다.`가 표시되는지 확인
-- VITE_YJS_URL이 현재 기본값인 ws://localhost:5000/yjs 또는 실제 백엔드 /yjs WebSocket 주소와 일치하는지 확인합니다. 1234는 추후 분리 모드에서만 사용합니다.
+- VITE_YJS_URL이 현재 기본값인 ws://localhost:5000/yjs 또는 실제 백엔드 /yjs WebSocket 주소와 일치하는지 확인합니다. 현재 1234 포트는 사용하지 않습니다.
 - 루트 통합 실행에서 EADDRINUSE 또는 로딩 고착이 발생하면 npm run dev:fresh로 이전 개발 프로세스 정리
 - EditorPage에서 useEditor의 반환값이 EditorUI props로 모두 전달되는지 확인
 - PreviewUI 변경 시 PDF.js canvas layer와 textLayer가 함께 유지되는지 확인
@@ -200,5 +198,5 @@ Vite 빌드 결과물은 FrontEnd/dist/에 생성되며 GitHub에는 업로드�
 - 마지막 편집 세션 저장은 백엔드 `PUT /entries/session` 요청에 의존하므로, CORS 설정에 PUT이 빠지면 재입장 복원이 동작하지 않습니다.
 - VITE_YJS_URL을 변경한 뒤에도 프론트 dev 서버를 재시작해야 합니다.
 - 백엔드 포트가 5001/5002로 우회되면 FrontEnd/.env 또는 npm run dev:5001 스크립트를 맞춰 사용합니다.
-- 백엔드 서버가 꺼져 있거나 /yjs WebSocket 연결이 실패하면 편집기는 열려도 실시간 협업 동기화가 되지 않습니다. 현재 루트 npm run dev는 별도 yws 프로세스를 실행하지 않습니다.
-- 루트 npm run dev는 현재 5000/5173 포트를 사전 검사합니다. 1234는 추후 분리 모드 예비 포트이므로 충돌 안내가 나오면 npm run dev:fresh를 사용합니다.
+- 백엔드 서버가 꺼져 있거나 /yjs WebSocket 연결이 실패하면 편집기는 열려도 실시간 협업 동기화가 되지 않습니다. 현재 루트 npm run dev는 백엔드와 프론트엔드만 실행합니다.
+- 루트 npm run dev는 현재 5000/5173 포트를 사전 검사합니다. 충돌 안내가 나오면 npm run dev:fresh를 사용합니다.

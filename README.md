@@ -60,7 +60,7 @@ DGULaTeX는 단순 CRUD 웹앱이 아니라 편집기, 실시간 동기화, 파�
 - 백엔드 sessionStore는 사용자당 하나의 활성 세션만 허용합니다. 이미 로그인된 계정으로 다른 브라우저나 컴퓨터에서 다시 로그인하면 `이미 로그인 중입니다.` 응답을 반환합니다.
 - 세션 TTL은 기본 1시간(`SESSION_TTL_MS=3600000`)이며, 프론트엔드가 실행 중이면 1분마다 세션 확인 API를 호출해 만료 시간을 갱신합니다.
 - CORS 허용 출처는 `CORS_ORIGIN` 환경 변수로 제한합니다. 개발 기본값은 `http://localhost:5173`입니다.
-- `VITE_API_URL`, `VITE_YJS_URL`, DB 접속 정보, OpenAI Key, Yjs 통합 WebSocket URL과 분리 실행 예비 포트는 `.env.example` 기준으로 환경 변수화했습니다.
+- `VITE_API_URL`, `VITE_YJS_URL`, DB 접속 정보, OpenAI Key는 `.env.example` 기준으로 환경 변수화했습니다. 현재 Yjs는 백엔드 5000 포트의 `/yjs` 경로만 사용합니다.
 - 편집 세션 저장은 `PUT /api/projects/:projectId/entries/session`을 사용하므로 CORS 허용 메서드에 `PUT`이 포함되어야 합니다.
 - 브라우저 콘솔에는 로그인 실패 상세, 학번, UUID, 프로젝트 ID, API payload, 세션 관련 값이 직접 출력되지 않도록 정리했습니다.
 - 백엔드 로그도 에러 객체 전체나 내부 파일 경로를 그대로 출력하지 않고, 운영 확인에 필요한 고정 태그와 최소 메시지 중심으로 남깁니다.
@@ -113,12 +113,12 @@ Browser
 | 경로 | 설명 |
 | :--- | :--- |
 | FrontEnd/ | React + Vite 클라이언트 |
-| BackEnd/ | Express API 서버, 컴파일러, Socket.IO, 통합 Yjs WebSocket, 분리 실행용 yws 스크립트 |
+| BackEnd/ | Express API 서버, 컴파일러, Socket.IO, 통합 Yjs WebSocket |
 | scripts/dev-all.js | 루트에서 프론트/백엔드를 한 번에 실행하고 필수 포트 충돌을 사전 검사하는 개발 스크립트 |
-| scripts/stop-dev.js | 5000/5173 및 과거 분리형 1234 포트를 점유한 이전 DGULaTeX 프로세스 정리 스크립트 |
+| scripts/stop-dev.js | 5000/5173 개발 프로세스와 과거 방식에서 남은 DGULaTeX 프로세스 정리 스크립트 |
 | schema.sql | MySQL 테이블 생성 스키마 |
 | database.md | DB 설계 및 테이블 설명 문서 |
-| package.json | 루트 통합 실행 스크립트. 현재 루트 명령은 yws를 직접 실행하지 않음 |
+| package.json | 루트 통합 실행 스크립트. 현재 실행 대상은 백엔드와 프론트엔드뿐 |
 
 ## 빠른 실행
 
@@ -136,8 +136,6 @@ FrontEnd/.env는 FrontEnd/.env.example을 참고합니다.
 ~~~env
 VITE_API_URL=http://localhost:5000
 VITE_YJS_URL=ws://localhost:5000/yjs
-# 추후 y-websocket 분리 실행 시에만 예비 포트 1234 형태로 변경:
-# VITE_YJS_URL=ws://localhost:1234
 ~~~
 
 BackEnd/.env는 BackEnd/.env.example을 참고합니다.
@@ -146,9 +144,6 @@ BackEnd/.env는 BackEnd/.env.example을 참고합니다.
 PORT=5000
 SESSION_TTL_MS=3600000
 CORS_ORIGIN=http://localhost:5173
-# 현재 통합 모드에서는 사용하지 않음. 추후 y-websocket 분리 실행용 예비 설정.
-YJS_HOST=localhost
-YJS_PORT=1234
 OPENAI_API_KEY=your_openai_api_key
 AUTH_MODE=DB
 LDAP_URL=ldap://a.mme.dongguk.edu
@@ -181,7 +176,7 @@ DB 구조 설명은 database.md를 참고하세요.
 npm run dev
 ~~~
 
-이전 실행이 완전히 종료되지 않아 5000, 5173 포트 또는 과거 분리형 1234 포트가 남아 있으면 아래 명령으로 정리 후 재실행합니다.
+현재 개발 실행에서 필요한 포트는 5000, 5173뿐입니다. 이전 실행이 완전히 종료되지 않아 포트가 남아 있으면 아래 명령으로 정리 후 재실행합니다.
 
 ~~~bash
 npm run dev:fresh
@@ -193,14 +188,25 @@ npm run dev:fresh
 npm run stop:dev
 ~~~
 
-개별 실행:
+개별 실행은 터미널을 두 개 열어서 각각 실행합니다.
+
+루트 폴더에서 `--prefix`로 실행하는 방법:
 
 ~~~bash
 npm --prefix BackEnd start
 npm --prefix FrontEnd run dev
+~~~
 
-# 선택 사항: 추후 Yjs를 1234 포트로 다시 분리할 때만 BackEnd 폴더 스크립트 사용
-# npm --prefix BackEnd run yws
+`cd`로 각 폴더에 들어가서 실행하는 방법:
+
+~~~bash
+cd BackEnd
+npm start
+~~~
+
+~~~bash
+cd FrontEnd
+npm run dev
 ~~~
 
 기본 포트:
@@ -211,7 +217,7 @@ npm --prefix FrontEnd run dev
 | BackEnd API | http://localhost:5000 |
 | Yjs WebSocket | ws://localhost:5000/yjs |
 
-SSH Remote 또는 GPU 서버 환경에서는 현재 기본 실행 기준으로 VS Code Ports 탭에서 5173, 5000 포트가 포워딩되어야 합니다. 1234는 추후 Yjs 분리 실행을 위한 임시 예비 포트이며 현재 프로그램은 1234로 동작하지 않습니다. 포트가 이미 사용 중이면 npm run dev는 새 서버를 띄우지 않고 dev:fresh/stop:dev 안내를 출력합니다.
+SSH Remote 또는 GPU 서버 환경에서는 현재 기본 실행 기준으로 VS Code Ports 탭에서 5173, 5000 포트만 포워딩하면 됩니다. 현재 프로그램은 1234 포트를 사용하지 않습니다. 포트가 이미 사용 중이면 npm run dev는 새 서버를 띄우지 않고 dev:fresh/stop:dev 안내를 출력합니다.
 
 ## 업로드 파일 기준
 
@@ -243,9 +249,9 @@ LaTeX 컴파일은 BackEnd/src/compiler/services/dockerCompileService.js에서 D
 - MySQL DB 생성 후 schema.sql 적용 여부 확인
 - BackEnd/src/models/db.js가 환경 변수를 정상적으로 읽는지 확인
 - Docker daemon과 LaTeX 컴파일 이미지 준비 여부 확인
-- npm run dev 실행 시 backend, frontend 두 프로세스만 뜨고, 별도 yws 프로세스 없이 Yjs가 backend의 /yjs 경로로 연결되는지 확인
+- npm run dev 실행 시 backend, frontend 두 프로세스만 뜨고, 별도 WebSocket 프로세스 없이 Yjs가 backend의 /yjs 경로로 연결되는지 확인
 - EADDRINUSE 또는 로딩 고착이 발생하면 npm run dev:fresh로 이전 개발 프로세스 정리 후 재실행
-- SSH Remote 환경이면 현재 기본 실행 기준 5173, 5000 포트 포워딩 확인. 1234는 추후 분리 모드용 예비 포트
+- SSH Remote 환경이면 현재 기본 실행 기준 5173, 5000 포트 포워딩 확인. 현재 1234 포트는 사용하지 않음
 - public/uploads, public/compiled, runtime은 런타임 산출물이므로 운영 서버에서만 관리
 - OpenAI 기능을 사용할 경우 OPENAI_API_KEY 설정 확인
 
@@ -262,7 +268,7 @@ LaTeX 컴파일은 BackEnd/src/compiler/services/dockerCompileService.js에서 D
 
 ### npm run dev 실행 시 EADDRINUSE가 발생하는 경우
 
-이전 실행에서 backend, Vite 또는 과거 분리형 y-websocket 프로세스가 남아 있으면 5000, 5173 또는 1234 포트 충돌이 발생할 수 있습니다. 루트에서 다음 명령을 실행합니다.
+이전 실행에서 backend 또는 Vite 프로세스가 남아 있으면 5000, 5173 포트 충돌이 발생할 수 있습니다. 현재 1234 포트는 개발 실행에 포함되지 않습니다. 루트에서 다음 명령을 실행합니다.
 
 ~~~bash
 npm run dev:fresh

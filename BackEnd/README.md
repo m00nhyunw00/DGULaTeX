@@ -52,17 +52,7 @@ npm install
 npm start
 ~~~
 
-Yjs WebSocket 서버는 현재 Express 백엔드와 같은 5000 포트의 /yjs 경로에서 함께 실행됩니다. 따라서 기본 실행에서는 npm start만으로 API, Socket.IO, Yjs WebSocket이 같이 동작합니다.
-
-~~~bash
-npm start
-~~~
-
-추후 Yjs를 별도 프로세스로 다시 분리할 경우에만 BackEnd 폴더의 아래 스크립트를 사용합니다. 이때 1234는 임시 예비 포트이며 현재 프로그램의 기본 동작 포트가 아닙니다. 루트 npm run dev는 이 스크립트를 실행하지 않습니다.
-
-~~~bash
-# npm run yws
-~~~
+Yjs WebSocket 서버는 현재 Express 백엔드와 같은 5000 포트의 /yjs 경로에서 함께 실행됩니다. 따라서 기본 실행에서는 npm start만으로 API, Socket.IO, Yjs WebSocket이 같이 동작합니다. 현재 1234 포트나 별도 WebSocket 프로세스는 사용하지 않습니다.
 
 루트에서 전체 서비스를 함께 실행:
 
@@ -82,7 +72,6 @@ npm run dev:fresh
 | :--- | :---: | :--- |
 | Express API | 5000 | PORT 환경 변수로 변경 가능 |
 | y-websocket | 5000 (/yjs) | 현재 기본 실행: Express HTTP 서버와 같은 포트에서 실행 |
-| y-websocket 분리 모드 예비 | 1234 | 추후 분리 실행을 위한 임시 예비 포트. 현재 기본 프로그램은 1234로 동작하지 않음 |
 | Socket.IO | API 서버와 동일 | 프로젝트 협업 이벤트용 |
 
 server.js는 5000 포트가 사용 중이면 다음 포트로 우회를 시도합니다. 이 경우 프론트엔드의 VITE_API_URL과 VITE_YJS_URL도 실제 백엔드 포트에 맞춰야 합니다. 루트 npm run dev는 현재 5000/5173 포트를 사전 검사하며, 충돌 시 npm run dev:fresh 또는 npm run stop:dev 사용을 안내합니다.
@@ -95,9 +84,6 @@ BackEnd/.env는 BackEnd/.env.example을 기준으로 생성합니다.
 PORT=5000
 SESSION_TTL_MS=3600000
 CORS_ORIGIN=http://localhost:5173
-# 현재 통합 모드에서는 사용하지 않음. 추후 y-websocket 분리 실행용 예비 설정.
-YJS_HOST=0.0.0.0
-YJS_PORT=1234
 OPENAI_API_KEY=your_openai_api_key
 AUTH_MODE=DB
 LDAP_URL=ldap://your_ldap_host
@@ -202,15 +188,15 @@ Docker 이미지가 없다면 src/compiler/docker/Dockerfile을 기준으로 TeX
 - BackEnd/.env 생성 및 DB 접속 정보 확인
 - schema.sql 적용 여부 확인
 - npm start 실행 후 실제 API 포트 확인
-- Yjs 협업 연결이 ws://localhost:5000/yjs로 붙는지 확인. 1234는 추후 분리 모드에서만 사용
-- 루트 통합 실행에서 EADDRINUSE가 발생하면 npm run dev:fresh로 이전 프로세스 정리. 현재 루트 npm run dev는 yws를 별도 실행하지 않음
+- Yjs 협업 연결이 ws://localhost:5000/yjs로 붙는지 확인. 현재 1234 포트는 사용하지 않음
+- 루트 통합 실행에서 EADDRINUSE가 발생하면 npm run dev:fresh로 이전 프로세스 정리. 현재 루트 npm run dev는 별도 WebSocket 프로세스를 실행하지 않음
 - Docker daemon과 컴파일 이미지 준비 여부 확인
 - public/compiled, public/uploads, runtime 디렉토리 권한 확인
 - OPENAI_API_KEY 설정 여부 확인
 - CORS_ORIGIN이 실제 프론트엔드 주소와 일치하는지 확인
 - 세션 복원이 안 되면 브라우저 콘솔에서 `PUT /entries/session` CORS 차단 여부 확인
 - 신규 디버깅 로그 추가 시 사용자 식별자, 세션 토큰, payload, 내부 경로가 포함되지 않는지 확인
-- SSH Remote 환경이면 현재 기본 실행 기준 5000 포트 포워딩 확인. 1234는 추후 분리 모드 예비 포트
+- SSH Remote 환경이면 현재 기본 실행 기준 5000 포트 포워딩 확인. 현재 1234 포트는 사용하지 않음
 
 ## 포트폴리오 관점의 구현 포인트
 
@@ -262,4 +248,4 @@ package-lock.json은 의존성 재현을 위해 유지하는 것을 권장합니
 
 - 백엔드 npm start가 실행 중인지 확인
 - VITE_YJS_URL이 ws://localhost:5000/yjs인지 확인
-- SSH Remote 환경이면 현재 기본 실행 기준 5000 포트 포워딩 확인. 1234는 추후 분리 모드 예비 포트
+- SSH Remote 환경이면 현재 기본 실행 기준 5000 포트 포워딩 확인. 현재 1234 포트는 사용하지 않음

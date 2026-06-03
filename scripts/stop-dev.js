@@ -6,7 +6,7 @@
  */
 const { execFileSync } = require('child_process');
 
-const ports = [1234, 5000, 5173, 3000, 3001, 3002];
+const ports = [5000, 5173, 3000, 3001, 3002];
 const currentPid = process.pid;
 
 const run = (command, args) => {
