@@ -280,3 +280,7 @@ npm run stop:dev
 - sessionStore는 메모리 기반이므로 서버 재시작 시 세션이 초기화됩니다. 현재는 사용자당 하나의 활성 세션만 허용합니다. 운영 배포 시 Redis 등 외부 세션 저장소 도입을 고려할 수 있습니다.
 - public/uploads와 public/compiled는 로컬 디스크 기반입니다. 운영 환경에서는 S3 호환 스토리지로 분리할 수 있습니다.
 - Docker 컴파일 이미지는 서버 환경에 따라 사전 빌드/배포 전략을 정해야 합니다.
+
+## 회의록
+
+- [DguLatex](https://www.notion.so/DguLatex-ffe509cd9cbf8318bbc78107498175fd?source=copy_link)
