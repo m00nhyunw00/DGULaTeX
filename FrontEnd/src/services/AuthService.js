@@ -22,6 +22,15 @@ const getAuthErrorMessage = (error, fallbackMessage) => {
     return error.response?.data?.message || error.message || fallbackMessage;
 };
 
+// 같은 브라우저의 탭들이 동일한 로그인 사용자를 보도록 localStorage에 저장합니다.
+const setStoredUserUuid = (userId) => {
+    if (userId) localStorage.setItem('user_uuid', userId);
+};
+
+const clearStoredUserUuid = () => {
+    localStorage.removeItem('user_uuid');
+};
+
 const normalizeUser = (user = {}) => ({
     id: user.studentId || user.id || "",        // 대시보드 API 요청용 (학번)
     studentId: user.studentId || user.id || "", // 화면 표시용 (학번)
@@ -37,7 +46,7 @@ export const AuthService = {
             if (data && data.success) {
                 setStoredSessionToken(data.sessionToken);
                 if (data.user?.uuid || data.user?.id) {
-                    localStorage.setItem('user_uuid', data.user.uuid || data.user.id);
+                    setStoredUserUuid(data.user.uuid || data.user.id);
                 }
 
                 return {
@@ -70,7 +79,7 @@ export const AuthService = {
 
             if (data && data.success) {
                 if (data.user?.uuid || data.user?.id) {
-                    localStorage.setItem('user_uuid', data.user.uuid || data.user.id);
+                    setStoredUserUuid(data.user.uuid || data.user.id);
                 }
                 return {
                     success: true,
@@ -96,7 +105,7 @@ export const AuthService = {
 
             if (data && data.success) {
                 if (data.user?.uuid || data.user?.id) {
-                    localStorage.setItem('user_uuid', data.user.uuid || data.user.id);
+                    setStoredUserUuid(data.user.uuid || data.user.id);
                 }
                 return {
                     success: true,
@@ -119,7 +128,7 @@ export const AuthService = {
             }
         } finally {
             clearStoredSessionToken();
-            localStorage.removeItem('user_uuid');
+            clearStoredUserUuid();
             broadcastLogoutEvent();
         }
 

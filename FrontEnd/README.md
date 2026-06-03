@@ -118,6 +118,8 @@ EditorUI -> useEditor -> EditorService -> src/api/editor/* -> BackEnd API
 - 로그인/회원가입/비밀번호 변경/탈퇴 실패 시 서버 응답 상세를 브라우저 콘솔에 출력하지 않습니다.
 - 사용자 학번, UUID, 세션 토큰, 프로젝트 ID, Yjs payload, API payload를 `console.log`/`console.warn`/`console.error`에 함께 남기지 않습니다.
 - 세션 토큰은 `src/api/auth.js`의 공통 인증 헤더 유틸을 통해 API 요청에만 사용합니다.
+- 같은 브라우저의 여러 탭은 하나의 로그인 상태를 공유하도록 세션 토큰과 `user_uuid`를 `localStorage`에 저장합니다. 단, 백엔드는 사용자당 하나의 활성 세션만 허용하므로 이미 로그인된 계정의 추가 로그인은 차단됩니다.
+- 앱 실행 중에는 1분마다 세션 확인 API를 호출해 기본 1시간 세션 만료 시간을 갱신합니다.
 - 개발 중 디버깅 로그가 필요하면 고정된 상태 태그만 남기고, 실제 사용자/프로젝트 데이터는 포함하지 않습니다.
 - 로그인 화면은 일반 인증 흐름만 사용하며, 별도 우회 로그인 화면은 제공하지 않습니다.
 
@@ -127,10 +129,12 @@ FrontEnd/.env는 FrontEnd/.env.example을 기준으로 생성합니다.
 
 ~~~env
 VITE_API_URL=http://localhost:5000
-VITE_YJS_URL=ws://localhost:1234
+VITE_YJS_URL=ws://localhost:5000/yjs
+# 추후 y-websocket 분리 실행 시에만 예비 포트 1234 형태로 변경:
+# VITE_YJS_URL=ws://localhost:1234
 ~~~
 
-SSH Remote 환경에서는 브라우저 기준 localhost가 로컬 PC이므로, VS Code 포트 포워딩에서 5173, 5000, 1234가 모두 열려 있어야 합니다.
+SSH Remote 환경에서는 브라우저 기준 localhost가 로컬 PC이므로, 현재 기본 실행 기준 VS Code 포트 포워딩에서 5173, 5000이 열려 있어야 합니다. 1234는 추후 y-websocket 분리 실행을 위한 임시 예비 포트이며 현재 프로그램은 1234로 동작하지 않습니다.
 
 ## 실행 방법
 
@@ -170,7 +174,8 @@ Vite 빌드 결과물은 FrontEnd/dist/에 생성되며 GitHub에는 업로드�
 ## 프론트엔드 인수인계 체크리스트
 
 - VITE_API_URL이 실제 백엔드 포트와 일치하는지 확인
-- VITE_YJS_URL이 y-websocket 서버 포트와 일치하는지 확인. 누락되면 Yjs 협업 연결을 시작하지 않습니다.
+- 같은 브라우저의 여러 탭은 하나의 로그인 상태를 공유하고, 이미 로그인된 계정을 다른 브라우저에서 다시 로그인하면 `이미 로그인 중입니다.`가 표시되는지 확인
+- VITE_YJS_URL이 현재 기본값인 ws://localhost:5000/yjs 또는 실제 백엔드 /yjs WebSocket 주소와 일치하는지 확인합니다. 1234는 추후 분리 모드에서만 사용합니다.
 - 루트 통합 실행에서 EADDRINUSE 또는 로딩 고착이 발생하면 npm run dev:fresh로 이전 개발 프로세스 정리
 - EditorPage에서 useEditor의 반환값이 EditorUI props로 모두 전달되는지 확인
 - PreviewUI 변경 시 PDF.js canvas layer와 textLayer가 함께 유지되는지 확인
@@ -195,5 +200,5 @@ Vite 빌드 결과물은 FrontEnd/dist/에 생성되며 GitHub에는 업로드�
 - 마지막 편집 세션 저장은 백엔드 `PUT /entries/session` 요청에 의존하므로, CORS 설정에 PUT이 빠지면 재입장 복원이 동작하지 않습니다.
 - VITE_YJS_URL을 변경한 뒤에도 프론트 dev 서버를 재시작해야 합니다.
 - 백엔드 포트가 5001/5002로 우회되면 FrontEnd/.env 또는 npm run dev:5001 스크립트를 맞춰 사용합니다.
-- Yjs 서버가 꺼져 있으면 편집기는 열려도 실시간 협업 동기화가 되지 않습니다.
-- 루트 npm run dev는 5000/1234/5173 포트를 사전 검사하므로 충돌 안내가 나오면 npm run dev:fresh를 사용합니다.
+- 백엔드 서버가 꺼져 있거나 /yjs WebSocket 연결이 실패하면 편집기는 열려도 실시간 협업 동기화가 되지 않습니다. 현재 루트 npm run dev는 별도 yws 프로세스를 실행하지 않습니다.
+- 루트 npm run dev는 현재 5000/5173 포트를 사전 검사합니다. 1234는 추후 분리 모드 예비 포트이므로 충돌 안내가 나오면 npm run dev:fresh를 사용합니다.

@@ -1,7 +1,8 @@
 /**
  * =================================================================
  * [Script] Development Process Orchestrator
- * 설명: 루트 명령 하나로 백엔드 API, Yjs 협업 서버, 프론트엔드 개발 서버를 함께 실행함
+ * 설명: 루트 명령 하나로 백엔드 API와 프론트엔드 개발 서버를 함께 실행함
+ *       Yjs는 현재 백엔드 5000 포트의 /yjs 경로에서 통합 실행됨
  * =================================================================
  */
 const fs = require('fs');
@@ -17,13 +18,6 @@ const commands = [
     color: '\x1b[36m',
     args: ['--prefix', 'BackEnd', 'start'],
     port: 5000,
-    envFiles: ['BackEnd/.env.example', 'BackEnd/.env']
-  },
-  {
-    name: 'yws',
-    color: '\x1b[35m',
-    args: ['--prefix', 'BackEnd', 'run', 'yws'],
-    port: 1234,
     envFiles: ['BackEnd/.env.example', 'BackEnd/.env']
   },
   {

@@ -8,6 +8,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 const AUTH_TOKEN_KEY = "dgu_latex_session_token";
 const AUTH_LOGOUT_EVENT_KEY = "dgu_latex_logout_event";
 
+// 같은 브라우저의 탭들은 하나의 로그인 상태를 공유하도록 localStorage를 사용합니다.
 export const getStoredSessionToken = () => localStorage.getItem(AUTH_TOKEN_KEY) || "";
 
 export const setStoredSessionToken = (token) => {

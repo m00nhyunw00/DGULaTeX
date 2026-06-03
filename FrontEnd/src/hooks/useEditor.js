@@ -16,6 +16,21 @@ import * as Y from 'yjs';
 import { WebsocketProvider } from 'y-websocket';
 import { MonacoBinding } from 'y-monaco';
 
+const getDefaultYjsUrl = () => {
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+    try {
+        const url = new URL(apiUrl, globalThis.location?.href || 'http://localhost:5173');
+        url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+        url.pathname = url.pathname.replace(/\/$/, '') + '/yjs';
+        url.search = '';
+        url.hash = '';
+        return url.toString().replace(/\/$/, '');
+    } catch {
+        return 'ws://localhost:5000/yjs';
+    }
+};
+
 const HISTORY_STATE = {
     EDITED: 'EDITED',
     RESTORED: 'RESTORED',
@@ -1437,11 +1452,7 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
         contributorsMapRef.current = contributorsMap;
 
         const roomName = `project-${pId.replace(/:/g, '')}-file-${currentFileId.replace(/:/g, '')}`;
-        const yjsServerUrl = import.meta.env.VITE_YJS_URL;
-        if (!yjsServerUrl) {
-            console.error('[YJS CONFIG ERROR] VITE_YJS_URL is not configured.');
-            return;
-        }
+        const yjsServerUrl = import.meta.env.VITE_YJS_URL || getDefaultYjsUrl();
 
         const provider = new WebsocketProvider(yjsServerUrl, roomName, ydoc);
         const updateAwarenessCursorStyles = () => {

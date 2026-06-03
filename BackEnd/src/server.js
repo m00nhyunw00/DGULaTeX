@@ -25,6 +25,7 @@ const compilerRoutes = require('./routes/compilerRoutes');
 const memberRoutes = require('./routes/memberRoutes');
 const historyRoutes = require('./routes/historyRoutes');
 const registerProjectSocket = require('./socket/projectSocket');
+const registerYjsWebSocket = require('./yjsWebSocket');
 
 const app = express();
 const frontendDistPath = path.resolve(__dirname, '../../FrontEnd/dist');
@@ -56,6 +57,7 @@ const io = new Server(httpServer, {
 app.set('io', io);
 
 registerProjectSocket(io);
+registerYjsWebSocket(httpServer);
 
 /* ---------------------------------------------------------
  * SECTION 2: 전역 미들웨어 설정
