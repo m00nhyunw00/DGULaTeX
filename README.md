@@ -284,3 +284,7 @@ npm run stop:dev
 ## 회의록
 
 - [DguLatex](https://www.notion.so/DguLatex-ffe509cd9cbf8318bbc78107498175fd?source=copy_link)
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
