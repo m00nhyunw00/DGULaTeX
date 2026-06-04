@@ -14,6 +14,7 @@ const MAX_MESSAGE_CHARS = 6000;
 const MAX_CONTEXT_FILE_CHARS = 20000;
 const MAX_CONTEXT_FILES = 8;
 const MAX_COMPILE_LOG_CHARS = 16000;
+const MAX_FILE_TREE_CHARS = 10000;
 
 const clipText = (value = '', max = MAX_MESSAGE_CHARS) => {
     const text = String(value || '');
@@ -48,6 +49,44 @@ const formatCompileLogContext = (compileLog) => {
     return "### 최근 컴파일 로그\n\n```text\n" + text + "\n```";
 };
 
+const formatFileTreeContext = (fileTree) => {
+    if (!fileTree) return "";
+
+    if (typeof fileTree === "string") {
+        const text = clipText(fileTree, MAX_FILE_TREE_CHARS).trim();
+        return text ? "### 프로젝트 파일 트리\n\n```text\n" + text + "\n```" : "";
+    }
+
+    if (typeof fileTree !== "object") return "";
+
+    const entries = Array.isArray(fileTree.entries) ? fileTree.entries : [];
+    const treeText = String(fileTree.text || "").trim() || entries
+        .map((entry) => {
+            const type = entry?.type === "folder" ? "folder" : "file";
+            const path = entry?.path || entry?.name || "unknown";
+            const markers = [
+                entry?.isMain ? "main" : "",
+                entry?.isActive ? "active" : ""
+            ].filter(Boolean);
+
+            return type + ": " + path + (markers.length ? " [" + markers.join(", ") + "]" : "");
+        })
+        .join("\n");
+
+    const clippedTreeText = clipText(treeText, MAX_FILE_TREE_CHARS).trim();
+    if (!clippedTreeText) return "";
+
+    const meta = [];
+    if (Number.isFinite(Number(fileTree.totalCount))) meta.push("total entries: " + Number(fileTree.totalCount));
+    if (fileTree.truncated) meta.push("truncated: true");
+
+    return [
+        "### 프로젝트 파일 트리",
+        meta.length ? meta.join(" / ") : "",
+        "```text\n" + clippedTreeText + "\n```"
+    ].filter(Boolean).join("\n\n");
+};
+
 const formatLatexContext = (latexContext) => {
     if (typeof latexContext === 'string') {
         return formatFileContext({ path: '현재 파일', content: latexContext }, '현재 활성 파일');
@@ -71,11 +110,13 @@ const formatLatexContext = (latexContext) => {
         .filter(Boolean)
         .join('\n\n');
 
+    const fileTreeText = formatFileTreeContext(latexContext.fileTree);
     const compileLogText = formatCompileLogContext(latexContext.compileLog);
 
     return [
         `프로젝트: ${projectTitle}`,
         latexContext.referencePolicy ? `컨텍스트 정책: ${latexContext.referencePolicy}` : '',
+        fileTreeText,
         activeFile,
         relatedText,
         compileLogText

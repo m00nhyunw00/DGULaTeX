@@ -13,6 +13,8 @@ const MAX_SUMMARY_CHARS = 3200;
 const MAX_CONTEXT_FILES = 6;
 const MAX_FILE_CHARS = 18000;
 const MAX_COMPILE_LOG_CHARS = 12000;
+const MAX_FILE_TREE_ENTRIES = 160;
+const MAX_FILE_TREE_CHARS = 8000;
 
 const emptyChatState = {
     isOpen: false,
@@ -143,12 +145,42 @@ const buildConversationMemory = (messages) => {
 
     return { recentMessages, memorySummary };
 };
+const buildFileTreeContext = (flatEntries = [], { activeFileId = '', mainFileId = '' } = {}) => {
+    const activeId = normalizeId(activeFileId);
+    const mainId = normalizeId(mainFileId);
+    const entries = flatEntries
+        .slice(0, MAX_FILE_TREE_ENTRIES)
+        .map((entry) => ({
+            path: entry.path || entry.name || 'unknown',
+            type: entry.type === 'folder' ? 'folder' : 'file',
+            isActive: Boolean(activeId && normalizeId(entry.id) === activeId),
+            isMain: Boolean(mainId && normalizeId(entry.id) === mainId)
+        }));
+
+    const text = entries
+        .map((entry) => {
+            const markers = [
+                entry.isMain ? 'main' : '',
+                entry.isActive ? 'active' : ''
+            ].filter(Boolean);
+            return entry.type + ': ' + entry.path + (markers.length ? ' [' + markers.join(', ') + ']' : '');
+        })
+        .join('\n');
+
+    return {
+        entries,
+        totalCount: flatEntries.length,
+        truncated: flatEntries.length > entries.length || text.length > MAX_FILE_TREE_CHARS,
+        text: clipText(text, MAX_FILE_TREE_CHARS)
+    };
+};
 
 export const useChat = ({
     project,
     files,
     activeFileId,
     activeFileMeta,
+    mainFileId,
     currentLaTeX,
     getCurrentLaTeX,
     compileLog,
@@ -237,10 +269,14 @@ export const useChat = ({
             },
             activeFile: currentFile,
             relatedFiles,
+            fileTree: buildFileTreeContext(flatEntries, {
+                activeFileId: currentFile.id,
+                mainFileId
+            }),
             compileLog: clipText(compileLog || "", MAX_COMPILE_LOG_CHARS),
-            referencePolicy: '현재 활성 파일과 해당 파일에서 직접 input/include/subfile로 참조한 파일, 그리고 최근 컴파일 로그를 포함했습니다.'
+            referencePolicy: '현재 활성 파일, 직접 input/include/subfile로 참조한 파일, 파일 트리 구조, 최근 컴파일 로그를 포함했습니다.'
         };
-    }, [activeFile, compileLog, currentLaTeX, flatEntries, getCurrentLaTeX, project, projectId]);
+    }, [activeFile, compileLog, currentLaTeX, flatEntries, getCurrentLaTeX, mainFileId, project, projectId]);
 
     const handleSend = useCallback(async (e) => {
         if (e?.preventDefault) e.preventDefault();

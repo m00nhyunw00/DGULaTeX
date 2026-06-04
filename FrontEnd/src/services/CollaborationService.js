@@ -272,6 +272,7 @@ export const CollaborationService = {
             const requests = (res.pendingMembers || []).map(request => ({
                 id: request.requestId,
                 userId: request.userId,
+                studentId: request.studentId || request.student_id || '',
                 name: request.userName || '사용자',
                 email: request.email || '',
                 requestedRole: String(request.requestRole || 'viewer').toLowerCase(),

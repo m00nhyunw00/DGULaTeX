@@ -75,6 +75,7 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
     const dismissTouchedCompileErrorsRef = useRef(() => {});
     const yjsSessionRef = useRef(0);
     const contributorsMapRef = useRef(null);
+    const historyOperationsArrayRef = useRef(null);
     const ytextObserverRef = useRef(null);
     const remoteCursorStyleRef = useRef(null);
     const awarenessChangeHandlerRef = useRef(null);
@@ -729,26 +730,28 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
 
     const captureHistoryContributors = useCallback(() => {
         const contributorsMap = contributorsMapRef.current;
+        const historyOperationsArray = historyOperationsArrayRef.current;
         const capturedAt = Date.now();
 
-        if (!contributorsMap) {
-            return {
-                capturedAt,
-                contributors: []
-            };
-        }
+        const contributors = contributorsMap
+            ? Array.from(contributorsMap.entries())
+                .map(([id, value]) => ({
+                    id,
+                    name: value?.name || 'User',
+                    editedAt: value?.editedAt || 0
+                }))
+                .filter(user => user.editedAt <= capturedAt)
+            : [];
 
-        const contributors = Array.from(contributorsMap.entries())
-            .map(([id, value]) => ({
-                id,
-                name: value?.name || 'User',
-                editedAt: value?.editedAt || 0
-            }))
-            .filter(user => user.editedAt <= capturedAt);
+        const changeOperations = historyOperationsArray
+            ? historyOperationsArray.toArray()
+                .filter(operation => (operation?.editedAt || 0) <= capturedAt)
+            : [];
 
         return {
             capturedAt,
-            contributors
+            contributors,
+            changeOperations
         };
     }, []);
 
@@ -761,13 +764,25 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
     const clearCapturedHistoryContributors = useCallback((capturedAt) => {
         const ydoc = ydocRef.current;
         const contributorsMap = contributorsMapRef.current;
+        const historyOperationsArray = historyOperationsArrayRef.current;
 
-        if (!ydoc || !contributorsMap || !capturedAt) return;
+        if (!ydoc || !capturedAt) return;
 
         ydoc.transact(() => {
-            for (const [id, value] of contributorsMap.entries()) {
-                if ((value?.editedAt || 0) <= capturedAt) {
-                    contributorsMap.delete(id);
+            if (contributorsMap) {
+                for (const [id, value] of contributorsMap.entries()) {
+                    if ((value?.editedAt || 0) <= capturedAt) {
+                        contributorsMap.delete(id);
+                    }
+                }
+            }
+
+            if (historyOperationsArray) {
+                for (let index = historyOperationsArray.length - 1; index >= 0; index -= 1) {
+                    const operation = historyOperationsArray.get(index);
+                    if ((operation?.editedAt || 0) <= capturedAt) {
+                        historyOperationsArray.delete(index, 1);
+                    }
                 }
             }
         }, 'history-contributors-clear');
@@ -785,6 +800,7 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
         const ydoc = ydocRef.current;
         const ytext = ytextRef.current;
         const contributorsMap = contributorsMapRef.current;
+        const historyOperationsArray = historyOperationsArrayRef.current;
 
         const nextContent = content || '';
 
@@ -810,6 +826,10 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
                         for (const key of Array.from(contributorsMap.keys())) {
                             contributorsMap.delete(key);
                         }
+                    }
+
+                    if (historyOperationsArray) {
+                        historyOperationsArray.delete(0, historyOperationsArray.length);
                     }
                 }, 'history-restore');
             }
@@ -900,14 +920,15 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
                     return;
                 }
 
-                const { capturedAt, contributors } = captureHistoryContributors();
+                const { capturedAt, contributors, changeOperations } = captureHistoryContributors();
 
                 const result = await HistoryService.updateLiveFileContent(
                     pId,
                     entryId,
                     content,
                     {
-                        contributors
+                        contributors,
+                        changeOperations
                     }
                 );
 
@@ -1282,6 +1303,7 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
         ytextRef.current = null;
         editorRef.current = null;
         contributorsMapRef.current = null;
+        historyOperationsArrayRef.current = null;
         ytextObserverRef.current = null;
         awarenessChangeHandlerRef.current = null;
         remoteCursorStyleRef.current = null;
@@ -1448,8 +1470,10 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
         const ytext = ydoc.getText('content');
 
         const contributorsMap = ydoc.getMap('historyContributors');
+        const historyOperationsArray = ydoc.getArray('historyOperations');
 
         contributorsMapRef.current = contributorsMap;
+        historyOperationsArrayRef.current = historyOperationsArray;
 
         const roomName = `project-${pId.replace(/:/g, '')}-file-${currentFileId.replace(/:/g, '')}`;
         const yjsServerUrl = import.meta.env.VITE_YJS_URL || getDefaultYjsUrl();
@@ -1543,11 +1567,54 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
                         currentUser?.email ||
                         'User';
 
-                    contributorsMap.set(String(userId), {
-                        id: String(userId),
+                    const editedAt = Date.now();
+                    const userKey = String(userId);
+
+                    contributorsMap.set(userKey, {
+                        id: userKey,
                         name: userName,
-                        editedAt: Date.now()
+                        editedAt
                     });
+
+                    let index = 0;
+                    const operations = [];
+
+                    for (const delta of event.delta || []) {
+                        if (delta.retain) {
+                            index += delta.retain;
+                        }
+
+                        if (typeof delta.insert === "string" && delta.insert.length > 0) {
+                            const text = delta.insert;
+                            const length = Array.from(text).length;
+                            operations.push({
+                                type: "insert",
+                                index,
+                                length,
+                                text,
+                                userId: userKey,
+                                userName,
+                                editedAt
+                            });
+                            index += length;
+                        }
+
+                        if (delta.delete) {
+                            operations.push({
+                                type: "delete",
+                                index,
+                                length: delta.delete,
+                                text: "",
+                                userId: userKey,
+                                userName,
+                                editedAt
+                            });
+                        }
+                    }
+
+                    if (operations.length > 0) {
+                        historyOperationsArray.push(operations);
+                    }
                 };
 
                 ytext.observe(observer);

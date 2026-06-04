@@ -6,7 +6,7 @@
  */
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
-export const updateLiveFileContentRequest = async (projectId, entryId, content, contributors = []) => {
+export const updateLiveFileContentRequest = async (projectId, entryId, content, contributors = [], changeOperations = []) => {
     try {
         const response = await fetch(
             `${API_BASE_URL}/api/histories/${projectId}/sync/code/${entryId}`,
@@ -19,7 +19,8 @@ export const updateLiveFileContentRequest = async (projectId, entryId, content, 
                 },
                 body: JSON.stringify({
                     content,
-                    contributors
+                    contributors,
+                    changeOperations
                 })
             }
         );

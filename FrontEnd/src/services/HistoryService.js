@@ -12,6 +12,59 @@ import { rollbackProjectRequest } from '../api/history/rollbackProject';
 import { updateLiveFileContentRequest } from '../api/history/updateLiveFileContent';
 import { syncLiveEntryStructureRequest } from '../api/history/syncLiveEntryStructure';
 
+const normalizeHistoryId = (value = '') => String(value || '').replace(/^0x/i, '').replace(/-/g, '').toLowerCase().trim();
+const historyOperationCache = new Map();
+const HISTORY_OPERATION_STORAGE_PREFIX = "dgu-latex:history-operations:";
+const canUseSessionStorage = () => typeof window !== "undefined" && Boolean(window.sessionStorage);
+const buildStorageKey = (historyId, entryId) => HISTORY_OPERATION_STORAGE_PREFIX + getOperationCacheKey(historyId, entryId);
+const readStoredOperations = (historyId, entryId) => {
+    if (!canUseSessionStorage()) return [];
+
+    try {
+        const raw = window.sessionStorage.getItem(buildStorageKey(historyId, entryId));
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+    } catch {
+        return [];
+    }
+};
+const writeStoredOperations = (historyId, entryId, operations = []) => {
+    if (!canUseSessionStorage()) return;
+
+    try {
+        window.sessionStorage.setItem(buildStorageKey(historyId, entryId), JSON.stringify(operations));
+    } catch {
+        // sessionStorage가 가득 찼거나 비활성화된 경우는 무시한다.
+    }
+};
+
+
+const getOperationCacheKey = (historyId, entryId) => normalizeHistoryId(historyId) + ':' + normalizeHistoryId(entryId);
+const cacheHistoryOperations = (historyId, entryId, operations = []) => {
+    const cleanHistoryId = normalizeHistoryId(historyId);
+    const cleanEntryId = normalizeHistoryId(entryId);
+    if (!cleanHistoryId || !cleanEntryId || !Array.isArray(operations) || operations.length === 0) return;
+
+    const key = getOperationCacheKey(cleanHistoryId, cleanEntryId);
+    const previous = historyOperationCache.get(key) || [];
+    const merged = [...previous, ...operations];
+    historyOperationCache.set(key, merged);
+    writeStoredOperations(cleanHistoryId, cleanEntryId, merged);
+};
+const getCachedHistoryOperations = (historyId, entryId) => {
+    const key = getOperationCacheKey(historyId, entryId);
+    const memoryValue = historyOperationCache.get(key);
+    if (Array.isArray(memoryValue) && memoryValue.length > 0) return memoryValue;
+
+    const storedValue = readStoredOperations(historyId, entryId);
+    if (storedValue.length > 0) {
+        historyOperationCache.set(key, storedValue);
+        return storedValue;
+    }
+    return [];
+};
+
 const isUnknownContributorName = (value) => {
     const name = String(value || "").trim();
     return !name || name === "(알수없음)" || name === "알 수 없는 사용자" || name === "알수없음";
@@ -32,7 +85,8 @@ const normalizeContributor = (contributor, fallbackName = "사용자") => {
     return {
         id: isUnknown ? "unknown" : (contributor?.id || contributor?.userId || contributor?.uuid || contributorName || fallbackName),
         name: isUnknown ? "(알수없음)" : contributorName,
-        isUnknown
+        isUnknown,
+        editedAt: contributor?.editedAt || contributor?.edited_at || null
     };
 };
 
@@ -135,7 +189,8 @@ export const HistoryService = {
                     label: res.label || 'none',
                     changedLines: res.changedLines || [],
                     previousContent: Object.prototype.hasOwnProperty.call(res, "previousContent") ? res.previousContent : null,
-                    contributors: (res.contributors || []).map((contributor) => normalizeContributor(contributor))
+                    contributors: (res.contributors || []).map((contributor) => normalizeContributor(contributor)),
+                    changeOperations: res.changeOperations || getCachedHistoryOperations(historyId, entryId)
                 }
             };
         } catch (error) {
@@ -197,12 +252,14 @@ export const HistoryService = {
     async updateLiveFileContent(projectId, entryId, content, options = {}) {
         try {
             // 백엔드가 요구하는 형식에 맞춰 contributors 배열을 body에 포함하여 전달
-            const res = await updateLiveFileContentRequest(projectId, entryId, content, options.contributors);
+            const res = await updateLiveFileContentRequest(projectId, entryId, content, options.contributors, options.changeOperations);
+            const targetVersionId = res.targetVersionId || res.versionId;
+            cacheHistoryOperations(targetVersionId, entryId, options.changeOperations);
 
             return {
                 success: true,
                 versionId: res.versionId,
-                targetVersionId: res.targetVersionId || res.versionId,
+                targetVersionId,
                 isNewVersionCreated: Boolean(res.isNewVersionCreated)
             };
         } catch (error) {

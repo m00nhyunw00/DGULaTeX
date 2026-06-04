@@ -81,7 +81,7 @@ async function initialize() {
     `);
     
     try {
-      await connection.query(`ALTER TABLE projects DROP FOREIGN KEY IF EXISTS fk_main_file`);
+      await connection.query(`ALTER TABLE projects DROP FOREIGN KEY fk_main_file`);
     } catch (err) {
       // 제약 조건이 없는 경우 무시
     }
@@ -146,7 +146,7 @@ async function initialize() {
     await connection.query(`
         CREATE TABLE IF NOT EXISTS invite_code (
           invite_code char(6) NOT NULL UNIQUE,
-          project_id BINARY(16), 
+          project_id BINARY(16) NOT NULL, 
           role ENUM('owner', 'editor', 'viewer') NOT NULL,
           PRIMARY KEY (project_id, role),
           FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
@@ -158,7 +158,7 @@ async function initialize() {
           project_id BINARY(16),
           user_id BINARY(16), 
           role ENUM('owner', 'editor', 'viewer') NOT NULL,
-          status ENUM('ONLINE', 'OFFLINE', 'AWAY') DEFAULT 'OFFLINE',                         
+          status VARCHAR(50),                         
           last_seen_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP, 
           current_file_id BINARY(16),
           PRIMARY KEY (project_id, user_id),
@@ -173,7 +173,7 @@ async function initialize() {
           session_id BINARY(16) PRIMARY KEY,
           project_id BINARY(16) NOT NULL, 
           user_id BINARY(16) NOT NULL, 
-          file_id BINARY(16),
+          file_id BINARY(16) DEFAULT NULL,
           cursor_line INT DEFAULT 0,
           cursor_column INT DEFAULT 0,
           last_pdf_url VARCHAR(512),
@@ -188,11 +188,11 @@ async function initialize() {
     await connection.query(`
         CREATE TABLE IF NOT EXISTS join_request (
           request_id BINARY(16) PRIMARY KEY,
-          project_id BINARY(16), 
-          user_id BINARY(16), 
+          project_id BINARY(16) DEFAULT NULL, 
+          user_id BINARY(16) DEFAULT NULL, 
           request_role ENUM('owner', 'editor', 'viewer') NOT NULL, 
           status ENUM('PENDING', 'ACCEPTED', 'REJECTED') DEFAULT 'PENDING',
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          created_at TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP,
           FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
           FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         ) ENGINE=InnoDB

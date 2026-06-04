@@ -727,7 +727,8 @@ const historyController = {
                         id: isUnknown ? "unknown" : contributorUserIdHex,
                         name: displayName,
                         userName: displayName,
-                        isUnknown
+                        isUnknown,
+                        editedAt: contributor.edited_at || null
                     };
                 });
 
@@ -1249,7 +1250,8 @@ const historyController = {
                 for (const contributor of contributors) {
                     if (!contributor?.id) continue;
                     
-                    const cleanContributorId = String(contributor.id).replace(/^0x/i, '').toLowerCase();
+                    const cleanContributorId = String(contributor.id).replace(/^0x/i, '').replace(/-/g, '').toLowerCase();
+                    if (!/^[0-9a-f]{32}$/.test(cleanContributorId)) continue;
 
                     await historyModel.insertHistoryContributor(connection, {
                         historyId: bTargetVersionId,

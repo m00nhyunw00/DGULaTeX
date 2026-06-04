@@ -121,6 +121,31 @@ function formatCompileTimestamp(value = new Date()) {
   }).format(safeDate) + ' KST';
 }
 
+function removeResultSection(compileLog = '') {
+  const lines = String(compileLog || '').split(/\r?\n/);
+  const result = [];
+  let skippingResult = false;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+
+    if (trimmed === '[RESULT]') {
+      skippingResult = true;
+      continue;
+    }
+
+    if (skippingResult && /^\[[A-Z_\s]+\]$/.test(trimmed)) {
+      skippingResult = false;
+    }
+
+    if (!skippingResult) {
+      result.push(line);
+    }
+  }
+
+  return result.join('\n').trim();
+}
+
 function buildCompilePassLog({ compilePasses = 1, pass = 1, compileLog = '' }) {
   return [
     compilePasses > 1 ? '[COMPILE PASS] ' + pass + '/' + compilePasses : '',
@@ -136,6 +161,11 @@ function buildCompileLog({
   completedAt = new Date()
 }) {
   const isFailed = status === 'failed';
+  const visibleCompileLogs = compileLogs
+    .filter(Boolean)
+    .map((compileLog, index, logs) => (
+      index === logs.length - 1 ? compileLog : removeResultSection(compileLog)
+    ));
 
   return [
     '[COMPILE ENGINE] ' + compileEngine,
@@ -144,7 +174,7 @@ function buildCompileLog({
     '[COMPILE TIME]',
     '컴파일 ' + (isFailed ? '실패' : '성공') + ' 시간: ' + formatCompileTimestamp(completedAt),
     '',
-    compileLogs.filter(Boolean).join('\n\n')
+    visibleCompileLogs.join('\n\n')
   ].filter(Boolean).join('\n');
 }
 

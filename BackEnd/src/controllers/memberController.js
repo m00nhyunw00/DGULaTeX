@@ -171,7 +171,7 @@ const inviteController = {
             const bProjectId = typeof projectLogic !== 'undefined' ? projectLogic.hexToBuffer(projectId) : parseHexToBuffer(projectId);
             
             const [pendingRows] = await connection.execute(
-                `SELECT jr.request_id, jr.user_id, u.user_name AS user_name, jr.request_role, jr.created_at
+                `SELECT jr.request_id, jr.user_id, u.student_id, u.user_name AS user_name, jr.request_role, jr.created_at
                  FROM join_request jr
                  JOIN users u ON jr.user_id = u.id
                  WHERE jr.project_id = ? AND jr.status = 'PENDING'
@@ -184,6 +184,7 @@ const inviteController = {
                 requestId: row.request_id.toString('hex'), // binary(16)을 Hex 문자열로 변환
                 userId: row.user_id.toString('hex'),
                 userName: row.user_name,
+                studentId: row.student_id,
                 requestRole: row.request_role, 
                 requestedAt: row.created_at
             }));

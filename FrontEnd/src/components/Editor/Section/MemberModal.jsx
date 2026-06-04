@@ -257,7 +257,7 @@ function MemberModal({
                                                     className="btn btn-sm btn-danger ms-2"
                                                     onClick={() => openKickConfirm(member)}
                                                 >
-                                                    강퇴
+                                                    제거
                                                 </button>
                                             )}
                                         </div>
@@ -300,7 +300,7 @@ function MemberModal({
                                             <div>
                                                 <div className="member-name">{request.name}</div>
                                                 <div className="member-email">
-                                                    {request.email || request.userId}
+                                                    {request.studentId || request.email || '학번 정보 없음'}
                                                 </div>
                                                 <div className="request-role-text">
                                                     요청 권한: {request.requestedRole}

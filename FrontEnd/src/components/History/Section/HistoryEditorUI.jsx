@@ -10,6 +10,18 @@ import { getUserColor, hexToRgba } from "../../../utils/userColor";
 
 const splitLines = (text = "") => String(text ?? "").replace(/\r\n/g, "\n").split("\n");
 
+const getLineStarts = (lines = []) => {
+    const starts = [];
+    let offset = 0;
+
+    for (const line of lines) {
+        starts.push(offset);
+        offset += Array.from(line).length + 1;
+    }
+
+    return starts;
+};
+
 const compactParts = (parts) => {
     const compacted = [];
 
@@ -40,7 +52,7 @@ const compactParts = (parts) => {
     return normalized;
 };
 
-const diffChars = (previousLine = "", currentLine = "") => {
+const diffChars = (previousLine = "", currentLine = "", previousStart = 0, currentStart = 0) => {
     const previousChars = Array.from(previousLine);
     const currentChars = Array.from(currentLine);
     const rows = previousChars.length;
@@ -61,25 +73,25 @@ const diffChars = (previousLine = "", currentLine = "") => {
 
     while (i < rows && j < cols) {
         if (previousChars[i] === currentChars[j]) {
-            parts.push({ type: "equal", text: currentChars[j] });
+            parts.push({ type: "equal", text: currentChars[j], previousStart: previousStart + i, currentStart: currentStart + j });
             i += 1;
             j += 1;
         } else if (dp[i + 1][j] >= dp[i][j + 1]) {
-            parts.push({ type: "remove", text: previousChars[i] });
+            parts.push({ type: "remove", text: previousChars[i], previousStart: previousStart + i });
             i += 1;
         } else {
-            parts.push({ type: "add", text: currentChars[j] });
+            parts.push({ type: "add", text: currentChars[j], currentStart: currentStart + j });
             j += 1;
         }
     }
 
     while (i < rows) {
-        parts.push({ type: "remove", text: previousChars[i] });
+        parts.push({ type: "remove", text: previousChars[i], previousStart: previousStart + i });
         i += 1;
     }
 
     while (j < cols) {
-        parts.push({ type: "add", text: currentChars[j] });
+        parts.push({ type: "add", text: currentChars[j], currentStart: currentStart + j });
         j += 1;
     }
 
@@ -89,6 +101,8 @@ const diffChars = (previousLine = "", currentLine = "") => {
 const buildLineRows = (previousContent = "", currentContent = "") => {
     const previousLines = splitLines(previousContent);
     const currentLines = splitLines(currentContent);
+    const previousLineStarts = getLineStarts(previousLines);
+    const currentLineStarts = getLineStarts(currentLines);
     const prevCount = previousLines.length;
     const currCount = currentLines.length;
     const dp = Array.from({ length: prevCount + 1 }, () => Array(currCount + 1).fill(0));
@@ -107,25 +121,25 @@ const buildLineRows = (previousContent = "", currentContent = "") => {
 
     while (i < prevCount && j < currCount) {
         if (previousLines[i] === currentLines[j]) {
-            ops.push({ type: "equal", previousLine: previousLines[i], currentLine: currentLines[j], currentNumber: j + 1 });
+            ops.push({ type: "equal", previousLine: previousLines[i], currentLine: currentLines[j], previousStart: previousLineStarts[i], currentStart: currentLineStarts[j], currentNumber: j + 1 });
             i += 1;
             j += 1;
         } else if (dp[i + 1][j] >= dp[i][j + 1]) {
-            ops.push({ type: "remove", previousLine: previousLines[i], previousNumber: i + 1 });
+            ops.push({ type: "remove", previousLine: previousLines[i], previousStart: previousLineStarts[i], previousNumber: i + 1 });
             i += 1;
         } else {
-            ops.push({ type: "add", currentLine: currentLines[j], currentNumber: j + 1 });
+            ops.push({ type: "add", currentLine: currentLines[j], currentStart: currentLineStarts[j], currentNumber: j + 1 });
             j += 1;
         }
     }
 
     while (i < prevCount) {
-        ops.push({ type: "remove", previousLine: previousLines[i], previousNumber: i + 1 });
+        ops.push({ type: "remove", previousLine: previousLines[i], previousStart: previousLineStarts[i], previousNumber: i + 1 });
         i += 1;
     }
 
     while (j < currCount) {
-        ops.push({ type: "add", currentLine: currentLines[j], currentNumber: j + 1 });
+        ops.push({ type: "add", currentLine: currentLines[j], currentStart: currentLineStarts[j], currentNumber: j + 1 });
         j += 1;
     }
 
@@ -134,7 +148,7 @@ const buildLineRows = (previousContent = "", currentContent = "") => {
         const op = ops[index];
 
         if (op.type === "equal") {
-            rows.push({ type: "equal", lineNumber: op.currentNumber, parts: [{ type: "equal", text: op.currentLine }] });
+            rows.push({ type: "equal", lineNumber: op.currentNumber, parts: [{ type: "equal", text: op.currentLine, previousStart: op.previousStart, currentStart: op.currentStart }] });
             continue;
         }
 
@@ -159,19 +173,19 @@ const buildLineRows = (previousContent = "", currentContent = "") => {
                 rows.push({
                     type: "modified",
                     lineNumber: addedLine.currentNumber,
-                    parts: diffChars(removedLine.previousLine, addedLine.currentLine)
+                    parts: diffChars(removedLine.previousLine, addedLine.currentLine, removedLine.previousStart, addedLine.currentStart)
                 });
             } else if (addedLine) {
                 rows.push({
                     type: "added",
                     lineNumber: addedLine.currentNumber,
-                    parts: [{ type: "add", text: addedLine.currentLine }]
+                    parts: [{ type: "add", text: addedLine.currentLine, currentStart: addedLine.currentStart }]
                 });
             } else if (removedLine) {
                 rows.push({
                     type: "removed",
                     lineNumber: "",
-                    parts: [{ type: "remove", text: removedLine.previousLine }]
+                    parts: [{ type: "remove", text: removedLine.previousLine, previousStart: removedLine.previousStart }]
                 });
             }
         }
@@ -180,53 +194,179 @@ const buildLineRows = (previousContent = "", currentContent = "") => {
     return rows;
 };
 
-const renderParts = (parts, color) => parts.map((part, index) => {
-    const className = part.type === "add"
-        ? "history-inline-added"
-        : part.type === "remove"
-            ? "history-inline-removed"
-            : undefined;
-    const style = color && part.type === "add"
-        ? { backgroundColor: hexToRgba(color, 0.22) }
-        : color && part.type === "remove"
-            ? { color, textDecorationColor: color }
-            : undefined;
+const normalizeUserKey = (value = "") => String(value || "").replace(/^0x/i, "").replace(/-/g, "").toLowerCase().trim();
 
-    return (
-        <span key={String(index) + "-" + part.type} className={className} style={style}>
-            {part.text || " "}
-        </span>
-    );
-});
+const getOperationUserKey = (operation = {}) => (
+    normalizeUserKey(operation.userId || operation.id) || String(operation.userName || operation.name || "").trim()
+);
 
-function InlineHistoryDiffViewer({ previousContent, currentContent, contributors = [], projectId }) {
+const buildOperationAttribution = (previousContent = "", changeOperations = []) => {
+    const documentChars = Array.from(previousContent).map((char, previousIndex) => ({
+        char,
+        previousIndex,
+        addedBy: ""
+    }));
+    const addedByCurrentIndex = new Map();
+    const deletedByPreviousIndex = new Map();
+
+    const sortedOperations = Array.isArray(changeOperations)
+        ? [...changeOperations].sort((a, b) => {
+            const aTime = new Date(a?.editedAt || a?.edited_at || 0).getTime() || 0;
+            const bTime = new Date(b?.editedAt || b?.edited_at || 0).getTime() || 0;
+            return aTime - bTime;
+        })
+        : [];
+
+    for (const operation of sortedOperations) {
+        const type = operation?.type || operation?.operationType;
+        const userKey = getOperationUserKey(operation);
+        const index = Math.max(0, Math.min(Number(operation?.index ?? operation?.operationIndex ?? 0) || 0, documentChars.length));
+
+        if (type === "insert") {
+            const text = String(operation?.text ?? operation?.operationText ?? "");
+            const insertedChars = Array.from(text).map((char) => ({
+                char,
+                previousIndex: null,
+                addedBy: userKey
+            }));
+            documentChars.splice(index, 0, ...insertedChars);
+            continue;
+        }
+
+        if (type === "delete") {
+            const length = Math.max(0, Number(operation?.length ?? operation?.operationLength ?? 0) || 0);
+            const removedChars = documentChars.splice(index, length);
+
+            for (const removedChar of removedChars) {
+                if (removedChar.previousIndex !== null && userKey) {
+                    deletedByPreviousIndex.set(removedChar.previousIndex, userKey);
+                }
+            }
+        }
+    }
+
+    documentChars.forEach((char, currentIndex) => {
+        if (char.addedBy) {
+            addedByCurrentIndex.set(currentIndex, char.addedBy);
+        }
+    });
+
+    return { addedByCurrentIndex, deletedByPreviousIndex };
+};
+
+const getContributorColor = (userKey, projectId) => (
+    userKey ? getUserColor(userKey, projectId) : null
+);
+
+const getLatestContributorKey = (contributors = []) => {
+    const latest = contributors.reduce((currentLatest, contributor) => {
+        if (!currentLatest) return contributor;
+
+        const latestTime = currentLatest.editedAt ? new Date(currentLatest.editedAt).getTime() : 0;
+        const contributorTime = contributor.editedAt ? new Date(contributor.editedAt).getTime() : 0;
+
+        return contributorTime >= latestTime ? contributor : currentLatest;
+    }, null);
+
+    return latest ? getOperationUserKey(latest) : "";
+};
+
+const getSingleContributorKey = (contributors = []) => (
+    contributors.length === 1 ? getOperationUserKey(contributors[0]) : ""
+);
+
+const getPartUserKey = (part, offset, attribution, fallbackUserKey = "") => {
+    if (part.type === "add") {
+        const currentIndex = Number(part.currentStart ?? 0) + offset;
+        return attribution.addedByCurrentIndex.get(currentIndex) || fallbackUserKey;
+    }
+
+    if (part.type === "remove") {
+        const previousIndex = Number(part.previousStart ?? 0) + offset;
+        return attribution.deletedByPreviousIndex.get(previousIndex) || fallbackUserKey;
+    }
+
+    return "";
+};
+
+const renderPartSegments = (part, index, options = {}) => {
+    const chars = Array.from(part.text || " ");
+    const segments = [];
+    let currentSegment = null;
+
+    chars.forEach((char, charIndex) => {
+        const userKey = getPartUserKey(part, charIndex, options.attribution, part.type === "remove" ? options.fallbackRemoveUserKey : options.fallbackAddUserKey);
+        const key = part.type + ":" + userKey;
+
+        if (currentSegment?.key === key) {
+            currentSegment.text += char;
+        } else {
+            currentSegment = { key, type: part.type, userKey, text: char };
+            segments.push(currentSegment);
+        }
+    });
+
+    return segments.map((segment, segmentIndex) => {
+        const className = segment.type === "add"
+            ? "history-inline-added"
+            : segment.type === "remove"
+                ? "history-inline-removed"
+                : undefined;
+        const color = getContributorColor(segment.userKey, options.projectId);
+        const style = color && segment.type === "add"
+            ? { backgroundColor: hexToRgba(color, 0.22) }
+            : color && segment.type === "remove"
+                ? { color, textDecorationColor: color }
+                : undefined;
+
+        return (
+            <span key={String(index) + "-" + String(segmentIndex) + "-" + segment.key} className={className} style={style}>
+                {segment.text || " "}
+            </span>
+        );
+    });
+};
+
+const renderParts = (parts, options = {}) => parts.flatMap((part, index) => renderPartSegments(part, index, options));
+
+const getRowBorderColor = (parts = [], options = {}) => {
+    for (const part of parts) {
+        if (part.type !== "add" && part.type !== "remove") continue;
+
+        const fallback = part.type === "remove" ? options.fallbackRemoveUserKey : options.fallbackAddUserKey;
+        const userKey = getPartUserKey(part, 0, options.attribution, fallback);
+        const color = getContributorColor(userKey, options.projectId);
+        if (color) return color;
+    }
+
+    return null;
+};
+
+function InlineHistoryDiffViewer({ previousContent, currentContent, contributors = [], changeOperations = [], projectId }) {
     const rows = buildLineRows(previousContent, currentContent);
-    const colorContributors = contributors.length > 0
-        ? contributors
-        : [{ id: "anonymous", name: "User" }];
-    let changedRowIndex = 0;
+    const attribution = buildOperationAttribution(previousContent, changeOperations);
+    const fallbackAddUserKey = getSingleContributorKey(contributors);
+    const fallbackRemoveUserKey = getLatestContributorKey(contributors) || fallbackAddUserKey;
 
     return (
         <div className="history-inline-code-viewer" role="region" aria-label="Edited file diff">
             {rows.map((row, index) => {
-                const isChangedRow = row.type !== "equal";
-                const contributor = isChangedRow
-                    ? colorContributors[changedRowIndex % colorContributors.length]
-                    : null;
-                const color = contributor
-                    ? getUserColor(contributor.id || contributor.name, projectId)
-                    : null;
-
-                if (isChangedRow) changedRowIndex += 1;
+                const renderOptions = {
+                    attribution,
+                    projectId,
+                    fallbackAddUserKey,
+                    fallbackRemoveUserKey
+                };
+                const borderColor = getRowBorderColor(row.parts, renderOptions);
 
                 return (
                     <div
                         key={String(index) + "-" + row.lineNumber}
                         className={"history-inline-code-row history-inline-code-row-" + row.type}
-                        style={color ? { borderLeftColor: color } : undefined}
+                        style={borderColor ? { borderLeftColor: borderColor } : undefined}
                     >
                         <div className="history-inline-code-gutter">{row.lineNumber}</div>
-                        <pre className="history-inline-code-line">{renderParts(row.parts, color)}</pre>
+                        <pre className="history-inline-code-line">{renderParts(row.parts, renderOptions)}</pre>
                     </div>
                 );
             })}
@@ -278,6 +418,7 @@ function HistoryEditorUI({
                         previousContent={activeFile.previousContent}
                         currentContent={activeFile.content || ""}
                         contributors={activeFile.contributors || selectedHistory?.contributors || []}
+                        changeOperations={activeFile.changeOperations || []}
                         projectId={projectId}
                     />
                 ) : activeFile ? (
