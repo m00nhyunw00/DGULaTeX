@@ -13,7 +13,7 @@
     width: 100vw;  /* 뷰포트 너비 100% 점유 */
 
     /* 배경 이미지 설정 */
-    background-image: url('/home/capston26/DguLaTex/FrontEnd/src/assets/dgu_logo.png');
+    background-image: url('/home/capston26/DGULaTeX/FrontEnd/src/assets/dgu_logo.png');
     background-size: cover;      /* 요소 크기에 맞춰 이미지 비율 유지하며 꽉 채움 */
     background-position: center; /* 이미지를 중앙 정렬하여 주요 피사체 노출 보장 */
     background-repeat: no-repeat;
