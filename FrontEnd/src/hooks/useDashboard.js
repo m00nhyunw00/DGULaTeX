@@ -90,9 +90,21 @@ export const useDashboard = (setSelectedProject, user) => {
         };
 
         const handleRemovedFromProject = (payload = {}) => {
+            const isProjectDeleted = payload.reason === 'PROJECT_DELETED' || payload.projectDeleted === true;
+            const deletedProjectId = String(payload.projectId || '').replace(/^0x/i, '').replace(/-/g, '').toLowerCase();
+
+            if (isProjectDeleted && deletedProjectId) {
+                setProjects((prevProjects) => prevProjects.filter((project) => {
+                    const projectId = String(project.id || '').replace(/^0x/i, '').replace(/-/g, '').toLowerCase();
+                    return projectId !== deletedProjectId;
+                }));
+            }
+
             refreshWithNotice({
-                title: '프로젝트에서 제외되었습니다',
-                message: (payload.ownerName || '사용자') + ' 소유의 "' + (payload.projectTitle || '프로젝트') + '" 프로젝트에서 강퇴되었습니다.'
+                title: isProjectDeleted ? '프로젝트가 삭제되었습니다' : '프로젝트에서 제외되었습니다',
+                message: isProjectDeleted
+                    ? '"' + (payload.projectTitle || '프로젝트') + '" 프로젝트가 삭제되었습니다.'
+                    : (payload.ownerName || '사용자') + ' 소유의 "' + (payload.projectTitle || '프로젝트') + '" 프로젝트에서 강퇴되었습니다.'
             });
         };
 
@@ -314,7 +326,7 @@ export const useDashboard = (setSelectedProject, user) => {
 
         try {
             const result = await ProjectService.downloadProjectPdf(projectId, {
-                downloadTarget: 'latest',
+                downloadTarget: 'mine',
                 userId: user?.uuid || user?.id,
                 fileName: projectName
             });

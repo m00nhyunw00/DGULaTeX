@@ -14,6 +14,10 @@ const memberModel = require('../models/memberModel');
 const historyModel = require('../models/historyModel');
 const db = require('../models/db');
 const crypto = require('crypto');
+const {
+    emitToUserDashboard,
+    forceLeaveUserFromProject
+} = require('../socket/socketEmitters');
 
 const generateContentHashBuffer = (content) => {
     const normalized = String(content ?? "").replace(/\r\n/g, "\n");
@@ -250,7 +254,65 @@ const projectController = {
                 return res.status(403).json({ status: "error", message: "프로젝트 삭제는 owner만 가능합니다." });
             }
 
+            const projectMembers = await memberModel.findMembersByProjectId(connection, projectIdBuffer);
+            const targetMembers = projectMembers.filter((member) => {
+                const memberId = member.user_id ? member.user_id.toString("hex").toLowerCase() : "";
+                return memberId && memberId !== ownerIdHex;
+            });
+            const cleanProjectId = String(id || "").replace(/^0x/i, "").replace(/-/g, "").toLowerCase().trim();
+            const deletedAt = new Date().toISOString();
+
             await projectModel.deleteProject(connection, projectIdBuffer);
+
+            const io = req.app.get('io');
+
+            if (io) {
+                try {
+                    const payload = {
+                        projectId: cleanProjectId,
+                        projectTitle: project.title || "프로젝트",
+                        ownerId: ownerIdHex,
+                        ownerName: project.owner_name || "사용자",
+                        reason: "PROJECT_DELETED",
+                        deletedAt
+                    };
+
+                    io.to(`project:${cleanProjectId}`).emit(
+                        'member:removed-from-project',
+                        {
+                            projectId: cleanProjectId,
+                            reason: 'PROJECT_DELETED',
+                            projectDeleted: true,
+                            lastEditSessionDeleted: true,
+                            updatedAt: deletedAt
+                        }
+                    );
+
+                    for (const member of targetMembers) {
+                        const memberId = member.user_id.toString("hex").toLowerCase();
+
+                        await emitToUserDashboard(
+                            io,
+                            memberId,
+                            'dashboard:project-removed',
+                            {
+                                ...payload,
+                                removedRole: member.role,
+                                updatedAt: deletedAt
+                            }
+                        );
+
+                        await forceLeaveUserFromProject(
+                            io,
+                            cleanProjectId,
+                            memberId
+                        );
+                    }
+                } catch (socketError) {
+                    console.error('[PROJECT DELETE SOCKET BROADCAST ERROR]', socketError.message);
+                }
+            }
+
             res.json({ 
                 status: "success", 
                 data: { message: "프로젝트가 성공적으로 삭제되었습니다." } 
@@ -391,7 +453,7 @@ const projectController = {
             }
 
             //  다운로드용 ZIP 헤더 세팅 위임 
-            downloadLogic.setZipHeaders(res, project.name || 'project');
+            downloadLogic.setZipHeaders(res, project.title || 'project');
 
             //  실시간 ZIP 압축 및 스트리밍 전송 위임 
             await downloadLogic.pipeEntriesToZip(res, entries, projectId);

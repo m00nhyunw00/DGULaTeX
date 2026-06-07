@@ -194,7 +194,7 @@ const entryModel = {
                 file_id = VALUES(file_id),
                 cursor_line = VALUES(cursor_line),
                 cursor_column = VALUES(cursor_column),
-                last_pdf_url = VALUES(last_pdf_url);
+                last_pdf_url = COALESCE(NULLIF(VALUES(last_pdf_url), ''), last_pdf_url);
         `;
 
         const params = [

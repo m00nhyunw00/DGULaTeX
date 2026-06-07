@@ -106,6 +106,13 @@ export const ProjectService = {
         try {
             const result = await downloadPdfRequest(projectId, options);
 
+            if (!result?.success) {
+                return {
+                    success: false,
+                    message: result?.message || 'PDF 다운로드 중 오류가 발생했습니다.'
+                };
+            }
+
             return {
                 success: true,
                 blob: result.blob,

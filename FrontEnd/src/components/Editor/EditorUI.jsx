@@ -391,6 +391,29 @@ function EditorUI(props) {
 
     const currentMainId = String(mainFileId).replace(/-/g, '').trim().toLowerCase();
 
+    const findTreeItemById = (nodes, targetId) => {
+        const cleanTargetId = cleanId(targetId);
+        if (!cleanTargetId) return null;
+
+        for (const node of nodes || []) {
+            const nodeId = cleanId(node?.id || node?.fileId);
+            if (nodeId === cleanTargetId) return node;
+
+            const found = findTreeItemById(node?.children, cleanTargetId);
+            if (found) return found;
+        }
+
+        return null;
+    };
+
+    const mainDocumentNode = findTreeItemById(props.files, mainFileId);
+    const compiledPdfDownloadFileName =
+        mainDocumentNode?.fileName ||
+        mainDocumentNode?.title ||
+        mainDocumentNode?.name ||
+        props.projectName ||
+        'compiled';
+
     const isClickedItemAlreadyMain = clickedFileId && currentMainId
         ? clickedFileId === currentMainId
         : false;
@@ -604,6 +627,7 @@ function EditorUI(props) {
                         toggleAutoCompile={props.toggleAutoCompile}
                         onCompile={props.onCompile}
                         onDownload={props.onDownload}
+                        downloadFileName={compiledPdfDownloadFileName}
                     />
                 </div>
             </div>

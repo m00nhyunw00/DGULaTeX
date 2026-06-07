@@ -208,6 +208,43 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
             .trim();
     }, []);
 
+    const persistCompiledPdfUrl = useCallback(async ({
+        projectId,
+        userId,
+        fileId,
+        pdfUrl: nextPdfUrl
+    }) => {
+        const cleanProjectId = normalizeEntryId(projectId);
+        const cleanUserId = normalizeEntryId(userId);
+        const cleanFileId = normalizeEntryId(fileId);
+        const cleanPdfUrl = String(nextPdfUrl || '').trim().split('?')[0];
+
+        if (
+            !cleanProjectId ||
+            !/^[0-9a-f]{32}$/.test(cleanUserId) ||
+            !cleanFileId ||
+            !cleanPdfUrl
+        ) {
+            return;
+        }
+
+        const cursor = editorRef.current?.getPosition?.() || { lineNumber: 1, column: 1 };
+        const cursorLine = Math.max(Number.parseInt(cursor?.lineNumber ?? 1, 10) || 1, 1);
+        const cursorColumn = Math.max(Number.parseInt(cursor?.column ?? 1, 10) || 1, 1);
+
+        const result = await EditorService.saveEditSession(cleanProjectId, {
+            userId: cleanUserId,
+            fileId: cleanFileId,
+            cursorLine,
+            cursorColumn,
+            lastPdfUrl: cleanPdfUrl
+        });
+
+        if (!result.success) {
+            console.warn('[COMPILED PDF SESSION SAVE FAILED]');
+        }
+    }, [normalizeEntryId]);
+
     const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
     const refreshTree = useCallback(async () => {
@@ -2198,7 +2235,15 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
 
             if (result && result.success) {
                 const url = result.pdfUrl || result.data?.pdfUrl || result.data?.pdf_url;
-                if (url) setPdfUrl(`${url}?t=${new Date().getTime()}`);
+                if (url) {
+                    setPdfUrl(`${url}?t=${new Date().getTime()}`);
+                    await persistCompiledPdfUrl({
+                        projectId: pId,
+                        userId: finalRealUserId,
+                        fileId: finalCompilerFileId,
+                        pdfUrl: url
+                    });
+                }
                 setCompileLog(result.compileLog || "성공");
                 setDismissedCompileErrorFileIds([]);
             } else {
@@ -2554,6 +2599,7 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
     }, [refreshProjectMembers]);
 
     const handleSocketRemovedFromProject = useCallback(async (payload) => {
+        const isProjectDeleted = payload?.reason === 'PROJECT_DELETED' || payload?.projectDeleted === true;
 
         // 내가 프로젝트에서 제거된 경우
         setMyProjectRole('');
@@ -2569,10 +2615,11 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
         setSelectedIds([]);
         setProjectMembers([]);
 
-        alert('프로젝트에서 제거되었습니다.');
+        alert(isProjectDeleted ? '프로젝트가 삭제되었습니다.' : '프로젝트에서 제거되었습니다.');
 
         return {
-            shouldLeaveProject: true
+            shouldLeaveProject: true,
+            forceDashboardReload: isProjectDeleted
         };
     }, [cleanupYjs]);
 

@@ -18,7 +18,7 @@ export const downloadCompiledPdfRequest = async (projectId, {
     fileName = "compiled"
 }) => {
     const response = await fetch(
-        `${API_BASE_URL}/api/compile/${projectId}/pdf/download`,
+        `${API_BASE_URL}/api/compile/${projectId}/download/pdf`,
         {
             method: "POST",
             headers: {

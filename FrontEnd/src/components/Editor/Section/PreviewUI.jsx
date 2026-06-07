@@ -257,7 +257,8 @@ function PreviewUI({
     handleManualCompile,
     isAutoCompile, 
     toggleAutoCompile, 
-    onCompile
+    onCompile,
+    downloadFileName = 'compiled'
 }) {
     const [hasCompiled, setHasCompiled] = useState(false);
     const [viewMode, setViewMode] = useState('pdf');
@@ -280,6 +281,18 @@ function PreviewUI({
     };
 
     const finalPdfUrl = buildFinalPdfUrl(pdfUrl);
+
+    const buildPdfDownloadName = (fileName) => {
+        const rawName = String(fileName || 'compiled')
+            .replace(/\\/g, '/')
+            .split('/')
+            .pop()
+            .trim();
+        const withoutExtension = rawName.replace(/\.[^.]*$/, '');
+        const safeName = withoutExtension.replace(/[\\/:*?"<>|]/g, '_').trim();
+
+        return `${safeName || 'compiled'}.pdf`;
+    };
 
     const handleCompileClick = async () => {
         setHasCompiled(true);
@@ -326,7 +339,7 @@ function PreviewUI({
 
             const a = document.createElement('a');
             a.href = blobUrl;
-            a.download = 'compiled.pdf';
+            a.download = buildPdfDownloadName(downloadFileName);
             document.body.appendChild(a);
             a.click();
             a.remove();
@@ -714,7 +727,6 @@ function PreviewUI({
 }
 
 export default PreviewUI;
-
 
 
 

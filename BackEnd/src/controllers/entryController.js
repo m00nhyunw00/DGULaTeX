@@ -562,6 +562,7 @@ const entryController = {
     saveEditSession: async (req, res) => {
         const { projectId } = req.params;
         const { userId, fileId, cursorLine, cursorColumn, lastPdfUrl } = req.body;
+        const cleanLastPdfUrl = String(lastPdfUrl || '').trim().split('?')[0] || null;
 
         // 필수 값 가드레일 체크
         if (!projectId || !userId) {
@@ -600,7 +601,7 @@ const entryController = {
                 fileId: fileIdBuffer,
                 cursorLine: cursorLine || 0,
                 cursorColumn: cursorColumn || 0,
-                lastPdfUrl: lastPdfUrl || null
+                lastPdfUrl: cleanLastPdfUrl
             });
 
             await connection.commit();

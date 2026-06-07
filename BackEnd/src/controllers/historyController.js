@@ -1187,6 +1187,7 @@ const historyController = {
             const now = new Date();
             let bTargetVersionId = latestMeta?.version_id;
             let isNewVersionCreated = false;
+            let prevRowsForLog = [];
 
             if (!latestMeta) {
                 isNewVersionCreated = true;
@@ -1214,6 +1215,7 @@ const historyController = {
                 const previousRows = latestMeta
                     ? await historyModel.findHistoryStructureByVersionId(connection, latestMeta.version_id)
                     : [];
+                prevRowsForLog = previousRows;
                 const previousStructureMap = buildStructureMap(previousRows);
                 const currentEntries = await historyModel.findLiveEntriesForSnapshot(connection, bProjectId);
 
@@ -1233,12 +1235,42 @@ const historyController = {
                     });
                 }
             } else {
+                const prevVerForLog = latestMeta
+                    ? await historyModel.findPreviousVersionId(connection, bProjectId, latestMeta.created_at)
+                    : null;
+                prevRowsForLog = prevVerForLog
+                    ? await historyModel.findHistoryStructureByVersionId(connection, prevVerForLog.version_id)
+                    : [];
+
                 await historyModel.updateHistoryStructureContent(connection, {
                     versionId: bTargetVersionId,
                     entryId: bEntryId,
                     contentId: bContentId
                 });
+            }
 
+            const finalRowsForLog = await historyModel.findHistoryStructureByVersionId(connection, bTargetVersionId);
+            const isLoglessVersionDeleted = await deleteHistoryVersionIfLogless(connection, {
+                versionId: bTargetVersionId,
+                projectId: bProjectId,
+                currentRows: finalRowsForLog,
+                prevRows: prevRowsForLog
+            });
+
+            if (isLoglessVersionDeleted) {
+                await connection.commit();
+                return res.status(200).json({
+                    status: "success",
+                    message: "LOGLESS_HISTORY_VERSION_DELETED",
+                    data: {
+                        isNewVersionCreated: false,
+                        isVersionDeleted: true,
+                        versionId: bTargetVersionId.toString("hex")
+                    }
+                });
+            }
+
+            if (!isNewVersionCreated) {
                 await historyModel.touchHistoryVersion(connection, {
                     versionId: bTargetVersionId,
                     actionType: "EDITED",

@@ -15,19 +15,52 @@ function isTestMode() {
   return process.env.COMPILER_TEST_MODE === 'true';
 }
 
+function toHexString(value) {
+  if (!value) return value;
+
+  const raw = Buffer.isBuffer(value)
+    ? value.toString('hex')
+    : String(value).trim();
+
+  const clean = raw
+    .replace(/^0x/i, '')
+    .replace(/-/g, '')
+    .toLowerCase();
+
+  if (!/^[0-9a-f]{32}$/.test(clean)) {
+    return null;
+  }
+
+  return clean;
+}
+
+function toBinaryId(value) {
+  const cleanHex = toHexString(value);
+  return cleanHex ? Buffer.from(cleanHex, 'hex') : null;
+}
+
+function normalizePdfUrl(pdfUrl) {
+  const cleanUrl = String(pdfUrl || '').trim();
+  return cleanUrl ? cleanUrl.split('?')[0] : null;
+}
+
 exports.updateLastPdfUrl = async ({ projectId, userId, fileId, pdfUrl }) => {
   // 1. [테스트] 테스트 모드일 경우 가짜 Fixture 로직 실행
   if (isTestMode()) {
     return testFixture.updateLastPdfUrl({ projectId, userId, fileId, pdfUrl });
   }
 
-  // 2. [타입 정류] 데이터베이스 호출 전, 모든 ID가 Hex 문자열임을 보장
-  // DB에서 Buffer로 읽힌 값들이 path.join이나 UUID_TO_BIN에서 터지지 않도록 예방
-  const pId = Buffer.isBuffer(projectId) ? projectId.toString('hex') : projectId;
-  const uId = Buffer.isBuffer(userId) ? userId.toString('hex') : userId;
-  const fId = Buffer.isBuffer(fileId) ? fileId.toString('hex') : fileId;
+  // 2. [타입 정류] last_edit_session의 BINARY(16) 키에 맞춰 Buffer로 통일
+  const pId = toBinaryId(projectId);
+  const uId = toBinaryId(userId);
+  const fId = toBinaryId(fileId);
+  const storedPdfUrl = normalizePdfUrl(pdfUrl);
 
-  const sessionId = crypto.randomUUID();
+  if (!pId || !uId || !fId || !storedPdfUrl) {
+    throw new Error('MISSING_LAST_PDF_SESSION_DATA');
+  }
+
+  const sessionId = toBinaryId(crypto.randomUUID());
 
   // 3. [저장/갱신] last_edit_session 테이블에 PDF 정보 기록 (UPSERT)
   await db.query(
@@ -39,13 +72,13 @@ exports.updateLastPdfUrl = async ({ projectId, userId, fileId, pdfUrl }) => {
       file_id, 
       last_pdf_url
     )
-    VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), UUID_TO_BIN(?), UUID_TO_BIN(?), ?)
+    VALUES (?, ?, ?, ?, ?)
     ON DUPLICATE KEY UPDATE
       file_id = VALUES(file_id),
       last_pdf_url = VALUES(last_pdf_url),
       updated_at = CURRENT_TIMESTAMP
     `,
-    [sessionId, pId, uId, fId, pdfUrl]
+    [sessionId, pId, uId, fId, storedPdfUrl]
   );
 
   // 4. [조회] 방금 업데이트된 레코드의 시간 정보 취득
@@ -53,8 +86,8 @@ exports.updateLastPdfUrl = async ({ projectId, userId, fileId, pdfUrl }) => {
     `
     SELECT updated_at 
     FROM last_edit_session 
-    WHERE project_id = UUID_TO_BIN(?) 
-      AND user_id = UUID_TO_BIN(?)
+    WHERE project_id = ?
+      AND user_id = ?
     `,
     [pId, uId]
   );
@@ -68,17 +101,22 @@ exports.getMyLatestPdfUrl = async ({
   projectId,
   userId
 }) => {
+  const pId = toBinaryId(projectId);
+  const uId = toBinaryId(userId);
+
+  if (!pId || !uId) return null;
+
   const [rows] = await db.query(
     `
     SELECT last_pdf_url, updated_at
     FROM last_edit_session
-    WHERE project_id = UUID_TO_BIN(?)
-      AND user_id = UUID_TO_BIN(?)
+    WHERE project_id = ?
+      AND user_id = ?
       AND last_pdf_url IS NOT NULL
     ORDER BY updated_at DESC
     LIMIT 1
     `,
-    [projectId, userId]
+    [pId, uId]
   );
 
   return rows[0] || null;
@@ -88,16 +126,20 @@ exports.getMyLatestPdfUrl = async ({
 exports.getProjectLatestPdfUrl = async ({
   projectId
 }) => {
+  const pId = toBinaryId(projectId);
+
+  if (!pId) return null;
+
   const [rows] = await db.query(
     `
     SELECT last_pdf_url, user_id, updated_at
     FROM last_edit_session
-    WHERE project_id = UUID_TO_BIN(?)
+    WHERE project_id = ?
       AND last_pdf_url IS NOT NULL
     ORDER BY updated_at DESC
     LIMIT 1
     `,
-    [projectId]
+    [pId]
   );
 
   return rows[0] || null;

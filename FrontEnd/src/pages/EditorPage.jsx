@@ -121,6 +121,10 @@ function EditorPage({ user, project, handleLogout, backToDashboard, goToHistory,
 
             if (result?.shouldLeaveProject) {
                 backToDashboard?.();
+
+                if (result?.forceDashboardReload && typeof window !== 'undefined') {
+                    window.location.replace('/dashboard');
+                }
             }
         };
 
@@ -265,5 +269,3 @@ function EditorPage({ user, project, handleLogout, backToDashboard, goToHistory,
 }
 
 export default EditorPage;
-
-
