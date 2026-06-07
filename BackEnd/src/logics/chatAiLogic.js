@@ -6,9 +6,27 @@
  */
 const { OpenAI } = require('openai');
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-});
+const isMissingOpenAIKey = (apiKey = '') => {
+    const key = String(apiKey || '').trim();
+    return !key || key.includes('your_') || key.includes('openai_api_key');
+};
+
+const createConfigError = () => {
+    const error = new Error('OpenAI API 키가 설정되지 않았습니다. BackEnd/.env의 OPENAI_API_KEY를 실제 키로 변경해주세요.');
+    error.statusCode = 503;
+    error.debugCode = 'OPENAI_API_KEY_MISSING';
+    return error;
+};
+
+const getOpenAIClient = () => {
+    const apiKey = process.env.OPENAI_API_KEY;
+
+    if (isMissingOpenAIKey(apiKey)) {
+        throw createConfigError();
+    }
+
+    return new OpenAI({ apiKey });
+};
 
 const MAX_MESSAGE_CHARS = 6000;
 const MAX_CONTEXT_FILE_CHARS = 20000;
@@ -320,7 +338,7 @@ async function generateAIReply(messages, latexContext, options = {}) {
         ...sanitizeMessages(messages)
     ];
 
-    const response = await openai.chat.completions.create({
+    const response = await getOpenAIClient().chat.completions.create({
         model: 'gpt-5.1',
         messages: finalMessages,
         reasoning_effort: 'medium',

@@ -114,6 +114,7 @@ Browser
 | :--- | :--- |
 | FrontEnd/ | React + Vite 클라이언트 |
 | BackEnd/ | Express API 서버, 컴파일러, Socket.IO, 통합 Yjs WebSocket |
+| deploy/ | 운영 서버 배포 보조 파일. 현재는 Nginx reverse proxy 설정을 포함 |
 | scripts/dev-all.js | 루트에서 프론트/백엔드를 한 번에 실행하고 필수 포트 충돌을 사전 검사하는 개발 스크립트 |
 | scripts/stop-dev.js | 5000/5173 개발 프로세스와 과거 방식에서 남은 DGULaTeX 프로세스 정리 스크립트 |
 | schema.sql | MySQL 테이블 생성 스키마 |
@@ -131,14 +132,21 @@ npm --prefix BackEnd install
 
 ### 2. 환경 변수 준비
 
-FrontEnd/.env는 FrontEnd/.env.example을 참고합니다.
+FrontEnd/.env는 FrontEnd/.env.example을 복사해 생성합니다. 개발 기본값은 다음과 같습니다.
 
 ~~~env
 VITE_API_URL=http://localhost:5000
 VITE_YJS_URL=ws://localhost:5000/yjs
 ~~~
 
-BackEnd/.env는 BackEnd/.env.example을 참고합니다.
+배포 빌드에서는 실제 도메인에 맞춰 아래처럼 변경합니다. HTTPS를 적용하면 `https://`, `wss://`를 사용합니다.
+
+~~~env
+VITE_API_URL=http://dgulatex.online
+VITE_YJS_URL=ws://dgulatex.online/yjs
+~~~
+
+BackEnd/.env는 BackEnd/.env.example을 복사해 생성합니다.
 
 ~~~env
 PORT=5000
@@ -146,7 +154,7 @@ SESSION_TTL_MS=3600000
 CORS_ORIGIN=http://localhost:5173
 OPENAI_API_KEY=your_openai_api_key
 AUTH_MODE=DB
-LDAP_URL=ldap://a.mme.dongguk.edu
+LDAP_URL=ldap://your_ldap_host
 LDAP_PORT=389
 COMPILER_TEST_MODE=false
 LATEX_DOCKER_IMAGE=dgu-latex-compiler
@@ -158,7 +166,13 @@ DB_NAME=dgu_latex
 DB_CONNECTION_LIMIT=10
 ~~~
 
-실제 .env 파일은 GitHub에 업로드하지 않습니다.
+운영 서버에서는 `CORS_ORIGIN`을 실제 프론트엔드 주소로 바꿉니다. 여러 주소를 허용해야 하면 쉼표로 구분합니다.
+
+~~~env
+CORS_ORIGIN=http://dgulatex.online
+~~~
+
+실제 `.env` 파일은 GitHub에 업로드하지 않습니다. 반대로 `FrontEnd/.env.example`, `BackEnd/.env.example`은 새 개발자와 배포 담당자가 참고해야 하므로 커밋 대상입니다. 현재 실행 기준으로 루트 `.env`는 필수 설정 파일이 아니며, 백엔드는 `BackEnd/.env`, 프론트엔드는 `FrontEnd/.env`를 사용합니다.
 
 ### 3. DB 준비
 
@@ -219,6 +233,24 @@ npm run dev
 
 SSH Remote 또는 GPU 서버 환경에서는 현재 기본 실행 기준으로 VS Code Ports 탭에서 5173, 5000 포트만 포워딩하면 됩니다. 현재 프로그램은 1234 포트를 사용하지 않습니다. 포트가 이미 사용 중이면 npm run dev는 새 서버를 띄우지 않고 dev:fresh/stop:dev 안내를 출력합니다.
 
+## 배포 개요
+
+현재 저장소에는 `deploy/nginx-dgulatex.online.conf` Nginx 설정 예시가 포함되어 있습니다.
+
+- Nginx는 `/var/www/dgulatex`의 프론트엔드 정적 빌드 결과물을 서빙합니다.
+- `/api/`, `/socket.io/`, `/yjs`, `/compiled/`, `/uploads/` 요청은 `127.0.0.1:5000` 백엔드로 프록시합니다.
+- `www.dgulatex.online` 요청은 `dgulatex.online`으로 리다이렉트합니다.
+- 운영 서버에서도 `BackEnd/.env`는 서버에만 두고 커밋하지 않습니다.
+- `FrontEnd/.env`의 `VITE_API_URL`, `VITE_YJS_URL`은 Vite 빌드 시점에 반영되므로 값을 바꾼 뒤에는 다시 빌드해야 합니다.
+
+프론트엔드 빌드:
+
+~~~bash
+npm --prefix FrontEnd run build
+~~~
+
+빌드 결과물은 `FrontEnd/dist/`에 생성되며, 운영 서버의 Nginx root(`/var/www/dgulatex`)에 배치합니다. `FrontEnd/dist/` 자체는 GitHub에 업로드하지 않습니다.
+
 ## 업로드 파일 기준
 
 지원 텍스트 파일은 `.tex`, `.bib`, `.txt`, `.toc`, `.sty`, `.cls`, `.md`입니다. 이미지/PDF 에셋은 `.png`, `.jpg`, `.jpeg`, `.gif`, `.webp`, `.svg`, `.pdf`를 지원합니다. 확장자가 없는 `latexmkrc`나 컴파일 산출물인 `.bcf`처럼 지원 목록에 없는 파일은 업로드가 거부될 수 있으며, 오류 메시지에 파일명, 확장자, MIME 정보가 표시됩니다.
@@ -254,14 +286,19 @@ LaTeX 컴파일은 BackEnd/src/compiler/services/dockerCompileService.js에서 D
 - SSH Remote 환경이면 현재 기본 실행 기준 5173, 5000 포트 포워딩 확인. 현재 1234 포트는 사용하지 않음
 - public/uploads, public/compiled, runtime은 런타임 산출물이므로 운영 서버에서만 관리
 - OpenAI 기능을 사용할 경우 OPENAI_API_KEY 설정 확인
+- 배포 시 deploy/nginx-dgulatex.online.conf의 root, server_name, proxy_pass가 실제 서버 경로와 포트에 맞는지 확인
 
 ## GitHub 업로드 전 확인
 
 - node_modules/는 업로드하지 않습니다.
-- .env 파일은 업로드하지 않습니다.
+- 실제 `.env` 파일은 업로드하지 않습니다.
+- `FrontEnd/.env.example`, `BackEnd/.env.example`은 업로드합니다.
 - BackEnd/runtime/, BackEnd/public/compiled/, BackEnd/public/uploads/는 런타임 산출물이므로 업로드하지 않습니다.
+- FrontEnd/dist/는 배포 산출물이므로 업로드하지 않습니다.
+- .codex/, .agents/ 같은 로컬 도구 상태 디렉터리는 업로드하지 않습니다.
+- deploy/ 안의 Nginx 예시 설정은 업로드하되, 인증서/개인 키/로컬 백업 파일은 업로드하지 않습니다.
 - 테스트용 PDF, LaTeX 산출물, 로그 파일은 필요할 때만 별도 샘플로 정리합니다.
-- package-lock.json은 재현 가능한 설치를 위해 유지하는 것을 권장합니다.
+- BackEnd/package-lock.json과 FrontEnd/package-lock.json은 재현 가능한 설치를 위해 유지합니다. 루트 package-lock.json은 현재 루트 패키지에 의존성이 없어 커밋하지 않습니다.
 - 개발자 도구 콘솔 또는 서버 로그에 학번, 비밀번호, 세션 토큰, UUID, 프로젝트 내부 ID, 절대 경로가 찍히는 새 로그를 추가하지 않습니다.
 
 ## 문제 해결

@@ -1,19 +1,29 @@
-# 📦 Dependencies
+# Dependencies
 node_modules/
 
-# 🏗️ Build Outputs
+# Build outputs and caches
 dist/
 dist-ssr/
+.vite/
+.cache/
+coverage/
 
-# 🌱 Environment Variables
+# Environment variables and secrets
 .env
 .env.*
 !.env.example
 *.local
 
-# 📄 Logs
+# Logs
+logs/
+*.log
 npm-debug.log*
 yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
-# 💻 IDE (Optional but safe)
-# .idea/
+# OS/editor local files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

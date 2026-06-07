@@ -23,7 +23,7 @@ export const chatRequest = async (payloadOrMessages, latexContext) => {
         if (response.ok && data.success) {
             return data;
         } else {
-            const serverError = new Error(data.message || "답변 생성 실패");
+            const serverError = new Error(data.detail || data.message || "답변 생성 실패");
             serverError.debugCode = data.debugCode;
             throw serverError;
         }

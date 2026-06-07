@@ -78,7 +78,7 @@ server.js는 5000 포트가 사용 중이면 다음 포트로 우회를 시도�
 
 ## 환경 변수
 
-BackEnd/.env는 BackEnd/.env.example을 기준으로 생성합니다.
+BackEnd/.env는 BackEnd/.env.example을 복사해 생성합니다. `src/server.js`는 실행 위치와 관계없이 `BackEnd/.env`를 명시적으로 읽습니다.
 
 ~~~env
 PORT=5000
@@ -98,7 +98,13 @@ DB_NAME=dgu_latex
 DB_CONNECTION_LIMIT=10
 ~~~
 
-DB pool은 src/models/db.js에서 설정하며, DB 접속 정보는 BackEnd/.env에서 읽습니다. 공개 저장소에는 실제 .env를 올리지 말고 BackEnd/.env.example만 공유하세요.
+운영 배포에서는 `CORS_ORIGIN`을 실제 프론트엔드 주소로 바꿉니다. 여러 Origin을 허용해야 하면 쉼표로 구분합니다.
+
+~~~env
+CORS_ORIGIN=http://dgulatex.online
+~~~
+
+DB pool은 src/models/db.js에서 설정하며, DB 접속 정보는 BackEnd/.env에서 읽습니다. 공개 저장소에는 실제 .env를 올리지 말고 BackEnd/.env.example만 공유하세요. 현재 Yjs는 백엔드 HTTP 서버의 `/yjs` 경로에 통합되어 있어 별도 YJS_HOST/YJS_PORT 환경 변수는 필요하지 않습니다.
 
 ~~~js
 host: process.env.DB_HOST || 'localhost'
@@ -129,8 +135,9 @@ database: process.env.DB_NAME
 ## 보안 및 로그 관리
 
 - `CORS_ORIGIN`으로 허용 프론트엔드 출처를 제한합니다.
+- 허용되지 않은 Origin은 `[CORS BLOCKED]` 태그로 최소 정보만 기록합니다.
 - 편집 세션 저장 API가 PUT 메서드를 사용하므로 server.js의 CORS 허용 메서드에 `PUT`을 포함해야 합니다.
-- DB 접속 정보, OpenAI API Key, Yjs Host/Port, Docker 이미지명, 업로드 루트는 `.env`에서만 관리합니다.
+- DB 접속 정보, OpenAI API Key, Docker 이미지명, 업로드 루트는 `.env`에서만 관리합니다.
 - 실제 `.env`는 GitHub에 업로드하지 않고, 공유 문서는 `.env.example`만 사용합니다.
 - 서버 로그에는 학번, 비밀번호, 세션 토큰, UUID, 프로젝트 내부 ID, 요청 payload, 절대 파일 경로를 직접 출력하지 않습니다.
 - 컨트롤러/서비스 에러 로그는 고정 태그와 최소 메시지 중심으로 남기며, 에러 객체 전체를 그대로 출력하지 않습니다.
@@ -172,10 +179,21 @@ Docker 이미지가 없다면 src/compiler/docker/Dockerfile을 기준으로 TeX
 
 - src/logics/chatAiLogic.js에서 OpenAI API를 호출합니다.
 - OPENAI_API_KEY가 필요합니다.
+- OPENAI_API_KEY가 비어 있거나 예시값이면 AI 요청은 503과 `OPENAI_API_KEY_MISSING` debugCode를 반환합니다.
 - 질문 유형에 따라 UI 설명 페르소나, LaTeX 보조 페르소나, 실행 환경 페르소나, 일반 코드 설명 컨텍스트를 선택적으로 구성합니다.
 - UI 관련 질문이 아닐 때는 긴 UI 페르소나를 생략하여 토큰 사용량을 줄입니다.
 - 현재 활성 파일, 참조 파일, 최근 컴파일 로그를 함께 전달해 LaTeX 문법/컴파일 문제를 보조합니다.
 - 사용자 안내 페르소나는 실제 화면 조작 기준으로 작성하며 일반 사용자 질문에 내부 API/DB 구조 설명을 노출하지 않습니다.
+
+## 배포 메모
+
+현재 저장소의 `deploy/nginx-dgulatex.online.conf`는 운영 서버 예시 설정입니다.
+
+- 백엔드는 `127.0.0.1:5000`에서 실행합니다.
+- Nginx가 `/api/`, `/socket.io/`, `/yjs`, `/compiled/`, `/uploads/`를 백엔드로 프록시합니다.
+- 프론트엔드 정적 파일은 Nginx root(`/var/www/dgulatex`)에서 직접 서빙합니다.
+- `client_max_body_size 100m`으로 업로드 크기 제한을 조정합니다.
+- 운영 서버의 `BackEnd/.env`에는 실제 DB/OpenAI 값을 넣고 GitHub에는 올리지 않습니다.
 
 ## 히스토리
 
@@ -186,6 +204,7 @@ Docker 이미지가 없다면 src/compiler/docker/Dockerfile을 기준으로 TeX
 ## 백엔드 인수인계 체크리스트
 
 - BackEnd/.env 생성 및 DB 접속 정보 확인
+- BackEnd/.env.example은 커밋 대상이고, BackEnd/.env는 커밋 제외 대상인지 확인
 - schema.sql 적용 여부 확인
 - npm start 실행 후 실제 API 포트 확인
 - Yjs 협업 연결이 ws://localhost:5000/yjs로 붙는지 확인. 현재 1234 포트는 사용하지 않음
@@ -213,13 +232,14 @@ Docker 이미지가 없다면 src/compiler/docker/Dockerfile을 기준으로 TeX
 
 - node_modules/
 - .env
+- .env.example은 업로드해야 함
 - public/compiled/
 - public/uploads/
 - runtime/
 - compiler output/log/pdf/aux 파일
 - 개인 테스트 파일, 로컬 HTTP 테스트 결과
 
-package-lock.json은 의존성 재현을 위해 유지하는 것을 권장합니다.
+BackEnd/package-lock.json은 의존성 재현을 위해 유지하는 것을 권장합니다.
 
 ## 문제 해결
 

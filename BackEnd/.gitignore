@@ -1,14 +1,48 @@
-# 📦 Dependencies
+# Dependencies
 node_modules/
 
-# 🌱 Environment Variables
+# Environment variables and secrets
 .env
 .env.*
 !.env.example
 
-# 📄 Logs
+# Runtime outputs
+runtime/
+public/compiled/
+public/uploads/
+src/compiler/output/
+src/compiler/latexTest/output/
+compiler/output/
+compiler/latexTest/output/
+upload_folder/
+upload_test_file.tex
+test_image.png
+*.http
+api_full_test.js
+
+# LaTeX generated files
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.run.xml
+*.synctex.gz
+*.toc
+*.xdv
+*.nav
+*.snm
+*.vrb
+*.pdf
+*.zip
+
+# Logs
 logs/
 *.log
+npm-debug.log*
 
-# 🏗️ Build Outputs
+# Build outputs
 build/

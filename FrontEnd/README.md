@@ -99,6 +99,7 @@ EditorUI -> useEditor -> EditorService -> src/api/editor/* -> BackEnd API
 
 - 초대 코드 생성
 - 초대 코드로 참여 요청
+- 초대 코드 복사. HTTPS가 아니거나 Clipboard API를 쓸 수 없는 환경에서는 textarea fallback으로 복사 시도
 - 참여 요청 승인/거절
 - 멤버 목록 조회
 - 멤버 권한 변경
@@ -125,12 +126,21 @@ EditorUI -> useEditor -> EditorService -> src/api/editor/* -> BackEnd API
 
 ## 환경 변수
 
-FrontEnd/.env는 FrontEnd/.env.example을 기준으로 생성합니다.
+FrontEnd/.env는 FrontEnd/.env.example을 복사해 생성합니다. 개발 기본값은 다음과 같습니다.
 
 ~~~env
 VITE_API_URL=http://localhost:5000
 VITE_YJS_URL=ws://localhost:5000/yjs
 ~~~
+
+배포 빌드에서는 실제 도메인에 맞춰 설정합니다.
+
+~~~env
+VITE_API_URL=http://dgulatex.online
+VITE_YJS_URL=ws://dgulatex.online/yjs
+~~~
+
+HTTPS를 적용한 운영 환경에서는 `https://`, `wss://`를 사용합니다. 에디터는 HTTPS 페이지에서 `ws://` Yjs URL이 들어오면 `wss://`로 보정하지만, API URL은 브라우저 mixed content를 피하려면 직접 `https://`로 맞춰야 합니다.
 
 SSH Remote 환경에서는 브라우저 기준 localhost가 로컬 PC이므로, 현재 기본 실행 기준 VS Code 포트 포워딩에서 5173, 5000만 열려 있으면 됩니다. 현재 프로그램은 1234 포트를 사용하지 않습니다.
 
@@ -169,9 +179,17 @@ npm run lint
 
 Vite 빌드 결과물은 FrontEnd/dist/에 생성되며 GitHub에는 업로드하지 않습니다.
 
+## 배포 메모
+
+- `VITE_API_URL`, `VITE_YJS_URL`은 Vite 빌드 시점에 번들에 반영됩니다.
+- 환경 변수를 바꾼 뒤에는 `npm run build`를 다시 실행해야 합니다.
+- 현재 Nginx 예시 설정은 `deploy/nginx-dgulatex.online.conf`에 있으며, `FrontEnd/dist/` 내용을 `/var/www/dgulatex`에서 서빙하는 구조입니다.
+- `/api/`, `/socket.io/`, `/yjs`, `/compiled/`, `/uploads/`는 같은 도메인에서 백엔드 5000 포트로 프록시됩니다.
+
 ## 프론트엔드 인수인계 체크리스트
 
 - VITE_API_URL이 실제 백엔드 포트와 일치하는지 확인
+- FrontEnd/.env.example은 커밋 대상이고, FrontEnd/.env는 커밋 제외 대상인지 확인
 - 같은 브라우저의 여러 탭은 하나의 로그인 상태를 공유하고, 이미 로그인된 계정을 다른 브라우저에서 다시 로그인하면 `이미 로그인 중입니다.`가 표시되는지 확인
 - VITE_YJS_URL이 현재 기본값인 ws://localhost:5000/yjs 또는 실제 백엔드 /yjs WebSocket 주소와 일치하는지 확인합니다. 현재 1234 포트는 사용하지 않습니다.
 - 루트 통합 실행에서 EADDRINUSE 또는 로딩 고착이 발생하면 npm run dev:fresh로 이전 개발 프로세스 정리
@@ -193,7 +211,7 @@ Vite 빌드 결과물은 FrontEnd/dist/에 생성되며 GitHub에는 업로드�
 ## 개발 주의사항
 
 - UI 컴포넌트는 가능한 한 props 기반으로 유지하고, API 호출은 hooks/services/api 계층에 둡니다.
-- .env는 GitHub에 올리지 않습니다.
+- 실제 .env는 GitHub에 올리지 않습니다. FrontEnd/.env.example은 새 환경 구성을 위해 유지합니다.
 - VITE_API_URL을 변경한 뒤에는 프론트 dev 서버를 재시작해야 합니다.
 - 마지막 편집 세션 저장은 백엔드 `PUT /entries/session` 요청에 의존하므로, CORS 설정에 PUT이 빠지면 재입장 복원이 동작하지 않습니다.
 - VITE_YJS_URL을 변경한 뒤에도 프론트 dev 서버를 재시작해야 합니다.

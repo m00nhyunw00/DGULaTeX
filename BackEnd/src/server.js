@@ -7,21 +7,22 @@
 /* ---------------------------------------------------------
  * SECTION 0: 핵심 모듈 및 설정 로드
  * --------------------------------------------------------- */
-require('dotenv').config(); 
 const express = require('express');
 const cors = require('cors');
 const http = require('http');
 const path = require('path');
 const { Server } = require('socket.io');
 
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
+
 /* ---------------------------------------------------------
  * SECTION 1: API 라우터 모듈 임포트
  * --------------------------------------------------------- */
-const authRoutes = require('./routes/authRoutes');     
-const chatRoutes = require('./routes/chatAiRoutes');   
-const projectRoutes = require('./routes/projectRoutes'); 
-const entryRoutes = require('./routes/entryRoutes');     
-const compilerRoutes = require('./routes/compilerRoutes'); 
+const authRoutes = require('./routes/authRoutes');
+const chatRoutes = require('./routes/chatAiRoutes');
+const projectRoutes = require('./routes/projectRoutes');
+const entryRoutes = require('./routes/entryRoutes');
+const compilerRoutes = require('./routes/compilerRoutes');
 const memberRoutes = require('./routes/memberRoutes');
 const historyRoutes = require('./routes/historyRoutes');
 const registerProjectSocket = require('./socket/projectSocket');
@@ -42,6 +43,10 @@ const corsOptions = {
             return;
         }
 
+        console.warn('[CORS BLOCKED]', {
+            origin,
+            allowedOrigins
+        });
         callback(new Error('CORS origin is not allowed'));
     },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
@@ -81,7 +86,7 @@ app.use('/api/chat', chatRoutes);
 /** [3-3] 프로젝트 메타데이터 관리 */
 app.use('/api/projects', projectRoutes);
 
-/** * [3-4] 엔트리(파일 시스템) 관리 
+/** * [3-4] 엔트리(파일 시스템) 관리
  * [중요] :projectId 파라미터가 entryRoutes 내부에서 동일한 명칭으로 호출되어야 함.
  */
 app.use('/api/projects/:projectId/entries', entryRoutes);
@@ -89,10 +94,10 @@ app.use('/api/projects/:projectId/entries', entryRoutes);
 /** [3-5] LaTeX 소스 컴파일 및 PDF 생성 */
 app.use('/api/compile', compilerRoutes);
 
-// 프로젝트 멤버 관리 
+// 프로젝트 멤버 관리
 app.use('/api/members', memberRoutes);
 
-// 히스토리 관리 
+// 히스토리 관리
 app.use('/api/histories', historyRoutes);
 
 

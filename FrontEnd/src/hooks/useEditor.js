@@ -31,6 +31,23 @@ const getDefaultYjsUrl = () => {
     }
 };
 
+const normalizeYjsUrl = (rawUrl = '') => {
+    const trimmedUrl = String(rawUrl || '').trim();
+    if (!trimmedUrl) return '';
+
+    try {
+        const url = new URL(trimmedUrl, globalThis.location?.href || 'http://localhost:5173');
+
+        if (globalThis.location?.protocol === 'https:' && url.protocol === 'ws:') {
+            url.protocol = 'wss:';
+        }
+
+        return url.toString().replace(/\/$/, '');
+    } catch {
+        return trimmedUrl.replace(/\/$/, '');
+    }
+};
+
 const HISTORY_STATE = {
     EDITED: 'EDITED',
     RESTORED: 'RESTORED',
@@ -1476,7 +1493,7 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
         historyOperationsArrayRef.current = historyOperationsArray;
 
         const roomName = `project-${pId.replace(/:/g, '')}-file-${currentFileId.replace(/:/g, '')}`;
-        const yjsServerUrl = import.meta.env.VITE_YJS_URL || getDefaultYjsUrl();
+        const yjsServerUrl = normalizeYjsUrl(import.meta.env.VITE_YJS_URL) || getDefaultYjsUrl();
 
         const provider = new WebsocketProvider(yjsServerUrl, roomName, ydoc);
         const updateAwarenessCursorStyles = () => {

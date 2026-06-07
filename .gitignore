@@ -2,6 +2,10 @@
 node_modules/
 **/node_modules/
 
+# Root workspace install artifact
+# BackEnd/package-lock.json and FrontEnd/package-lock.json are tracked.
+/package-lock.json
+
 # Environment variables and secrets
 .env
 .env.*
@@ -10,6 +14,10 @@ FrontEnd/.env
 FrontEnd/.env.*
 BackEnd/.env
 BackEnd/.env.*
+
+# Local tool state
+.codex/
+.agents/
 
 # Frontend build/cache
 FrontEnd/dist/
@@ -56,7 +64,19 @@ BackEnd/upload_test_file.tex
 BackEnd/test_image.png
 BackEnd/*.http
 BackEnd/api_full_test.js
-n
+
+# Deployment local-only files
+deploy/*.local
+deploy/*.local.*
+deploy/*.bak
+deploy/*.backup
+deploy/*.key
+deploy/*.pem
+deploy/*.crt
+deploy/*.csr
+deploy/.env
+deploy/.env.*
+
 # Logs
 logs/
 *.log

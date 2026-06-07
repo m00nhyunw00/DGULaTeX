@@ -304,11 +304,12 @@ export const useChat = ({
                 chatLog: [...(prev.chatLog || []), assistantMessage]
             }));
         } catch (err) {
+            const errorMessage = err?.message || '죄송합니다. AI 응답 생성 중 오류가 발생했습니다.';
             updateChatState((prev) => ({
                 ...prev,
                 chatLog: [
                     ...(prev.chatLog || []),
-                    { role: 'assistant', content: '죄송합니다. AI 응답 생성 중 오류가 발생했습니다.' }
+                    { role: 'assistant', content: errorMessage }
                 ]
             }));
         } finally {

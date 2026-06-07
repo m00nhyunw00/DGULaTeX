@@ -51,9 +51,34 @@ function ShareModal({
 
     if (!isOpen) return null;
 
+    const copyWithFallback = (text) => {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.setAttribute('readonly', '');
+        textarea.style.position = 'fixed';
+        textarea.style.top = '-9999px';
+        textarea.style.left = '-9999px';
+
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        textarea.setSelectionRange(0, textarea.value.length);
+
+        try {
+            return document.execCommand('copy');
+        } finally {
+            document.body.removeChild(textarea);
+        }
+    };
+
     const copyToClipboard = async (text) => {
         try {
-            await navigator.clipboard.writeText(text);
+            if (navigator.clipboard && window.isSecureContext) {
+                await navigator.clipboard.writeText(text);
+            } else if (!copyWithFallback(text)) {
+                throw new Error('COPY_FAILED');
+            }
+
             alert('초대 코드가 복사되었습니다.');
         } catch {
             alert('복사에 실패했습니다. 코드를 직접 복사해주세요.');

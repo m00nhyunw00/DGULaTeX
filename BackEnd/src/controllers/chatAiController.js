@@ -30,11 +30,13 @@ const chatController = {
 
         } catch (error) {
             console.error("[CHAT ERROR]", error.message);
+            const statusCode = error.statusCode || error.status || 500;
             
-            return res.status(500).json({
+            return res.status(statusCode).json({
                 success: false,
                 message: "AI 비서와 연결하는 중 문제가 발생했습니다.",
-                debugCode: error.name
+                detail: error.statusCode ? error.message : '',
+                debugCode: error.debugCode || error.name
             });
         }
     }
