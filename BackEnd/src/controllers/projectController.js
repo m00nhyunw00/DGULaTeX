@@ -274,6 +274,7 @@ const projectController = {
                         ownerId: ownerIdHex,
                         ownerName: project.owner_name || "사용자",
                         reason: "PROJECT_DELETED",
+                        projectDeleted: true,
                         deletedAt
                     };
 
@@ -281,6 +282,9 @@ const projectController = {
                         'member:removed-from-project',
                         {
                             projectId: cleanProjectId,
+                            projectTitle: project.title || "프로젝트",
+                            ownerId: ownerIdHex,
+                            ownerName: project.owner_name || "사용자",
                             reason: 'PROJECT_DELETED',
                             projectDeleted: true,
                             lastEditSessionDeleted: true,

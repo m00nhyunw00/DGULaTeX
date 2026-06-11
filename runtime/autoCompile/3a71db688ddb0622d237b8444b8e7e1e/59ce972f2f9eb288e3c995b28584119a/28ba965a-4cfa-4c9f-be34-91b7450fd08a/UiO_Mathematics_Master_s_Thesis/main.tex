@@ -1,0 +1,68 @@
+% Documentation for front page:
+% https://github.com/martinhelso/masterfrontpage
+
+\documentclass[a4paper, oneside, openany, british]{memoir}
+% Add [final] to remove marginal notesㅇㅇㅇ
+
+\usepackage{style}           % Custom style
+\usepackage{masterfrontpage} % Front page
+\usepackage{kantlipsum}      % Dummy text
+
+\title{Title}
+\subtitle{Optional Subtitle}
+\author{Author}
+
+\includeonly
+{
+    sections/abstract,
+    sections/acknowledgements,
+    sections/introduction,
+    sections/chapter2,
+    sections/chapter3,
+    sections/chapter4,
+    sections/appendixA,
+    sections/appendixB,
+}
+
+\begin{document}
+
+    % frontmatter 구간에서는 hyperref 페이지 앵커를 꺼서
+    % page.i / page.ii 중복 경고를 막습니다.
+    \hypersetup{pageanchor=false}
+
+    \frontmatter        % Folios in Roman numerals, unnumbered chapters.
+
+    \masterfrontpage
+
+    \input{sections/abstract}
+    \input{sections/acknowledgements}
+
+    \microtypesetup{protrusion = false}
+    \tableofcontents    % Or \tableofcontents*
+    \listoffigures      % Or \listoffigures*
+    \listoftables       % Or \listoftables*
+    \microtypesetup{protrusion = true}
+
+    % 여기서부터 본문: 페이지 앵커 다시 켜기
+    \mainmatter         % Folios in Arabic numerals, numbered chapters.
+    \hypersetup{pageanchor=true}
+
+    \input{sections/introduction}
+
+    \part{The First Part}
+
+    \input{sections/chapter2}
+    \input{sections/chapter3}
+    \input{sections/chapter4}
+
+    \appendix           % "Chapter" is renamed "Appendix"
+    \appendixpage       % Similar to \part*{Appendices}, but appears in TOC.
+
+    \input{sections/appendixA}
+    \input{sections/appendixB}
+
+    \backmatter         % Folios in Arabic numerals, unnumbered chapters.
+
+    \printbibliography
+
+\end{document}

@@ -10,6 +10,8 @@ import { CompilerService } from '../services/CompilerService';
 import { CollaborationService } from '../services/CollaborationService';
 import { socket } from '../socket/socketClient';
 
+const PROJECT_DELETED_NOTICE_KEY = 'dgu-latex:project-deleted-notice';
+
 export const useDashboard = (setSelectedProject, user) => {
     const [projects, setProjects] = useState([]);
     const [activeMenu, setActiveMenu] = useState('all');
@@ -69,6 +71,25 @@ export const useDashboard = (setSelectedProject, user) => {
     }, [user?.id]);
 
     useEffect(() => { fetchProjects(); }, [fetchProjects]);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+
+        try {
+            const rawNotice = window.sessionStorage.getItem(PROJECT_DELETED_NOTICE_KEY);
+            if (!rawNotice) return;
+
+            window.sessionStorage.removeItem(PROJECT_DELETED_NOTICE_KEY);
+
+            const notice = JSON.parse(rawNotice);
+            setDashboardNotice({
+                title: notice?.title || '프로젝트가 삭제되었습니다',
+                message: notice?.message || '프로젝트가 삭제되었습니다.'
+            });
+        } catch {
+            window.sessionStorage.removeItem(PROJECT_DELETED_NOTICE_KEY);
+        }
+    }, []);
 
     useEffect(() => {
         const dashboardUserId = user?.uuid || user?.id;

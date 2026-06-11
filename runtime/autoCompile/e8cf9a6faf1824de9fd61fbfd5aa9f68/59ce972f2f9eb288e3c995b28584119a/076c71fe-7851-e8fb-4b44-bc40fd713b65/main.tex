@@ -1,0 +1,53 @@
+\documentclass{article}
+
+\usepackage{kotex}
+\usepackage{amsmath}
+\usepackage{graphicx}
+
+\title{Simple LaTeX Test Document Auto}
+\author{Test User}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+
+This is a simple LaTeX document that can be compiled with a single
+\texttt{main.tex} file.
+
+한글도 정상적으로 출력되는지 확인하기 위한 문장입니다.
+
+
+
+\section{Mathematics}
+
+Here is a simple inline equation: $a^2 + b^2 = c^2$.
+
+Here is a displayed equation:
+
+\[
+    E = mc^2
+\]
+
+\section{Table}
+
+\begin{table}[h]
+    \centering
+    \begin{tabular}{|c|c|}
+        \hline
+        Item \& Value \\
+        \hline
+        Apple \& 3 \\
+        Banana \& 5 \\
+        \hline
+    \end{tabular}
+    \caption{A simple table}
+\end{table}
+
+\section{Conclusion}
+
+This document is intentionally simple and should compile successfully.
+
+\end{document}

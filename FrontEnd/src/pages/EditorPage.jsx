@@ -123,6 +123,7 @@ function EditorPage({ user, project, handleLogout, backToDashboard, goToHistory,
                 backToDashboard?.();
 
                 if (result?.forceDashboardReload && typeof window !== 'undefined') {
+                    alert(result.noticeMessage || '프로젝트가 삭제되었습니다.');
                     window.location.replace('/dashboard');
                 }
             }

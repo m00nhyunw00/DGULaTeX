@@ -16,6 +16,8 @@ import * as Y from 'yjs';
 import { WebsocketProvider } from 'y-websocket';
 import { MonacoBinding } from 'y-monaco';
 
+const PROJECT_DELETED_NOTICE_KEY = 'dgu-latex:project-deleted-notice';
+
 const getDefaultYjsUrl = () => {
     const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -2600,6 +2602,7 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
 
     const handleSocketRemovedFromProject = useCallback(async (payload) => {
         const isProjectDeleted = payload?.reason === 'PROJECT_DELETED' || payload?.projectDeleted === true;
+        const projectDeletedMessage = '"' + (payload?.projectTitle || '프로젝트') + '" 프로젝트가 삭제되었습니다.';
 
         // 내가 프로젝트에서 제거된 경우
         setMyProjectRole('');
@@ -2615,11 +2618,24 @@ export const useEditor = (selectedProject, currentUser, restoreNavigationState =
         setSelectedIds([]);
         setProjectMembers([]);
 
-        alert(isProjectDeleted ? '프로젝트가 삭제되었습니다.' : '프로젝트에서 제거되었습니다.');
+        if (isProjectDeleted) {
+            try {
+                window.sessionStorage.setItem(PROJECT_DELETED_NOTICE_KEY, JSON.stringify({
+                    title: '프로젝트가 삭제되었습니다',
+                    message: projectDeletedMessage
+                }));
+            } catch {
+                // sessionStorage를 사용할 수 없는 환경에서는 대시보드 안내 복원을 생략합니다.
+            }
+        } else {
+            alert('프로젝트에서 제거되었습니다.');
+        }
 
         return {
             shouldLeaveProject: true,
-            forceDashboardReload: isProjectDeleted
+            forceDashboardReload: isProjectDeleted,
+            noticeTitle: isProjectDeleted ? '프로젝트가 삭제되었습니다' : '프로젝트에서 제외되었습니다',
+            noticeMessage: isProjectDeleted ? projectDeletedMessage : '프로젝트에서 제거되었습니다.'
         };
     }, [cleanupYjs]);
 
